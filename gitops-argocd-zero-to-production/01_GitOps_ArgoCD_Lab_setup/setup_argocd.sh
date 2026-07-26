@@ -45,8 +45,31 @@ NC='\033[0m' # No Color
 CLUSTER_NAME="argocd-cluster"
 KIND_CONFIG="kind-config.yaml"
 NAMESPACE="argocd"
-KIND_VERSION="v1.33.1"
 ARGOCD_PORT=8080
+MIN_DISK_GB=10  # Minimum free disk space required in GB
+
+# Automatically fetch the latest stable kindest/node version from Kind releases
+fetch_latest_kind_k8s_version() {
+    local latest
+    latest=$(curl -sSL --max-time 10 \
+        https://raw.githubusercontent.com/kubernetes-sigs/kind/main/pkg/apis/config/defaults/default_cluster_config.go \
+        2>/dev/null | grep -oP 'kindest/node:v\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+
+    if [ -z "$latest" ]; then
+        # Fallback: parse latest kind GitHub release page
+        latest=$(curl -sSL --max-time 10 \
+            https://api.github.com/repos/kubernetes-sigs/kind/releases/latest \
+            2>/dev/null | grep -oP 'kindest/node:v\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    fi
+
+    if [ -z "$latest" ]; then
+        echo "1.36.1"  # hardcoded fallback if network unavailable
+    else
+        echo "$latest"
+    fi
+}
+
+KIND_VERSION="v$(fetch_latest_kind_k8s_version)"
 
 # ═══════════════════════════════════════════════════════════════
 # HELPER FUNCTIONS
@@ -144,55 +167,105 @@ spinner() {
 # ═══════════════════════════════════════════════════════════════
 # PREREQUISITE CHECK FUNCTIONS
 # ═══════════════════════════════════════════════════════════════
+check_disk_space() {
+    local available_gb
+    available_gb=$(df / | awk 'NR==2 {printf "%d", $4/1024/1024}')
+    if [ "$available_gb" -lt "$MIN_DISK_GB" ]; then
+        print_error "Insufficient disk space! Available: ${available_gb}GB, Required: ${MIN_DISK_GB}GB"
+        print_info "Free up space with: docker system prune -af && docker volume prune -f"
+        exit 1
+    fi
+    print_success "Disk Space     : ${available_gb}GB free (min required: ${MIN_DISK_GB}GB)"
+}
+
+install_kind() {
+    print_step "Installing Kind..."
+    local arch
+    arch=$(uname -m)
+    local kind_arch="amd64"
+    [ "$arch" = "aarch64" ] && kind_arch="arm64"
+
+    local kind_release
+    kind_release=$(curl -sSL --max-time 10 \
+        https://api.github.com/repos/kubernetes-sigs/kind/releases/latest \
+        2>/dev/null | grep '"tag_name"' | awk -F'"' '{print $4}')
+    [ -z "$kind_release" ] && kind_release="v0.27.0"
+
+    curl -sSLo /tmp/kind \
+        "https://kind.sigs.k8s.io/dl/${kind_release}/kind-linux-${kind_arch}"
+    sudo install -m 755 /tmp/kind /usr/local/bin/kind
+    rm -f /tmp/kind
+    print_success "Kind installed: $(kind version | awk '{print $2}')"
+}
+
+install_kubectl() {
+    print_step "Installing kubectl..."
+    local arch
+    arch=$(uname -m)
+    local kubectl_arch="amd64"
+    [ "$arch" = "aarch64" ] && kubectl_arch="arm64"
+
+    local kube_version
+    kube_version=$(curl -sSL --max-time 10 https://dl.k8s.io/release/stable.txt 2>/dev/null)
+    [ -z "$kube_version" ] && kube_version="v1.36.3"
+
+    curl -sSLo /tmp/kubectl \
+        "https://dl.k8s.io/release/${kube_version}/bin/linux/${kubectl_arch}/kubectl"
+    sudo install -m 755 /tmp/kubectl /usr/local/bin/kubectl
+    rm -f /tmp/kubectl
+    print_success "kubectl installed: $(kubectl version --client 2>/dev/null | head -1)"
+}
+
 check_prerequisites() {
     print_section "🔍 STEP 0: Checking Prerequisites"
 
     local all_ok=true
 
+    # Check disk space first
+    check_disk_space
+
     # Check Docker
     if command -v docker &> /dev/null; then
-        print_success "Docker       : $(docker --version | awk '{print $3}' | tr -d ',')"
+        print_success "Docker         : $(docker --version | awk '{print $3}' | tr -d ',')"
     else
         print_error "Docker is NOT installed!"
-        print_info "Install: sudo apt install docker.io -y"
+        print_info "Install: sudo apt install docker.io -y  OR  https://docs.docker.com/engine/install/"
         all_ok=false
     fi
 
-    # Check Kind
+    # Check Kind — auto-install if missing
     if command -v kind &> /dev/null; then
-        print_success "Kind         : $(kind version | awk '{print $2}')"
+        print_success "Kind           : $(kind version | awk '{print $2}')"
     else
-        print_error "Kind is NOT installed!"
-        print_info "Install: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
-        all_ok=false
+        print_warning "Kind is NOT installed. Auto-installing..."
+        install_kind
     fi
 
-    # Check kubectl
+    # Check kubectl — auto-install if missing
     if command -v kubectl &> /dev/null; then
-        print_success "kubectl      : $(kubectl version --client --short 2>/dev/null || kubectl version --client -o json 2>/dev/null | grep gitVersion | awk -F'"' '{print $4}')"
+        print_success "kubectl        : $(kubectl version --client 2>/dev/null | grep 'Client Version' | awk '{print $3}' || echo 'installed')"
     else
-        print_error "kubectl is NOT installed!"
-        print_info "Install: https://kubernetes.io/docs/tasks/tools/"
-        all_ok=false
+        print_warning "kubectl is NOT installed. Auto-installing..."
+        install_kubectl
     fi
 
-    # Check Helm
+    # Check Helm (optional — only needed for Helm install method)
     if command -v helm &> /dev/null; then
-        print_success "Helm         : $(helm version --short 2>/dev/null)"
+        print_success "Helm           : $(helm version --short 2>/dev/null)"
     else
-        print_warning "Helm is NOT installed (needed only for Helm-based install)"
+        print_warning "Helm is NOT installed (only needed for Helm-based install)"
         print_info "Install: https://helm.sh/docs/intro/install/"
     fi
 
     print_separator
 
     if [ "$all_ok" = false ]; then
-        print_error "Some prerequisites are missing. Please install them first."
-        print_info "Run this script again after installing the missing tools."
+        print_error "Some prerequisites are missing. Please install them and re-run."
         exit 1
     fi
 
     print_success "All prerequisites satisfied! Continuing..."
+    print_info "Kubernetes node image will use: ${KIND_VERSION}"
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -201,8 +274,16 @@ check_prerequisites() {
 create_kind_cluster() {
     print_section "📦 STEP 1: Creating Kind Kubernetes Cluster"
 
-    # Auto-detect EC2 Private IP
-    PRIVATE_IP=$(hostname -I | awk '{print $1}')
+    # Auto-detect private IP using the default route interface
+    # This works on any server regardless of interface name (eth0, ens5, enp3s0, etc.)
+    DEFAULT_IFACE=$(ip route show default 2>/dev/null | awk '/default/ {print $5}' | head -1)
+    PRIVATE_IP=$(ip -4 addr show "$DEFAULT_IFACE" 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -1)
+
+    # Fallback if default route detection fails
+    if [ -z "$PRIVATE_IP" ]; then
+        PRIVATE_IP=$(hostname -I | awk '{print $1}')
+    fi
+
     print_info "Auto-detected Private IP: ${PRIVATE_IP}"
     echo ""
 
@@ -279,7 +360,8 @@ install_argocd_manifests() {
     print_step "Installing ArgoCD using official manifests..."
     echo ""
 
-    kubectl apply -n $NAMESPACE \
+    # Use --server-side to avoid "Too long annotation" error on applicationsets CRD
+    kubectl apply --server-side -n $NAMESPACE \
         -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
     print_step "Waiting for ArgoCD server to be ready..."
@@ -333,11 +415,16 @@ install_argocd_cli() {
     if command -v argocd &> /dev/null; then
         print_success "ArgoCD CLI already installed: $(argocd version --client --short 2>/dev/null || echo 'installed')"
     else
-        print_step "Downloading ArgoCD CLI..."
-        curl -sSL -o argocd-linux-amd64 \
-            https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-        sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
-        rm -f argocd-linux-amd64
+        local arch
+        arch=$(uname -m)
+        local argocd_arch="amd64"
+        [ "$arch" = "aarch64" ] && argocd_arch="arm64"
+
+        print_step "Downloading ArgoCD CLI (${argocd_arch})..."
+        curl -sSL -o /tmp/argocd \
+            "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-${argocd_arch}"
+        sudo install -m 555 /tmp/argocd /usr/local/bin/argocd
+        rm -f /tmp/argocd
         print_success "ArgoCD CLI installed successfully!"
     fi
 
@@ -368,7 +455,11 @@ setup_access() {
         print_warning "Password not yet available. ArgoCD may still be initializing."
         print_info "Run later: kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath=\"{.data.password}\" | base64 -d"
     else
-        PUBLIC_IP=$(curl -s ifconfig.me 2>/dev/null || echo "<YOUR_PUBLIC_IP>")
+        # Try multiple sources for public IP with timeout
+        PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me 2>/dev/null \
+            || curl -s --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null \
+            || curl -s --max-time 5 https://checkip.amazonaws.com 2>/dev/null \
+            || echo "<YOUR_PUBLIC_IP>")
 
         echo -e "${CYAN}  ┌─────────────────────────────────────────────────────────┐${NC}"
         echo -e "${CYAN}  │          🎉 ArgoCD Login Credentials                    │${NC}"
