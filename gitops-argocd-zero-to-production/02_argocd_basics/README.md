@@ -1490,3 +1490,1152 @@ spec:
 > 🙏 **If this helped you, please Star ⭐ the repo and Subscribe 🔔 to [TECH MAHATO on YouTube](https://www.youtube.com/techmahato)!**
 >
 > 💡 **Next:** Move to `03_setup_installation` to set up ArgoCD on your own cluster!
+
+---
+
+## 20. 🎯 Interview Questions & Answers (ArgoCD & GitOps)
+
+> This section covers real interview questions asked by interviewers at top companies for DevOps/SRE/Platform Engineering roles. Organized from Basic → Intermediate → Advanced → Practical/Scenario-Based.
+
+---
+
+### 📗 BASIC LEVEL QUESTIONS
+
+---
+
+**Q1: What is ArgoCD?**
+
+**Answer:** ArgoCD is a declarative, GitOps-based continuous delivery tool for Kubernetes. It is a Kubernetes controller that continuously monitors running applications and compares the live state against the desired state defined in a Git repository. When differences are detected, ArgoCD can automatically or manually sync the cluster to match the Git-defined state. It is a CNCF Graduated project, open source under Apache 2.0 license.
+
+---
+
+**Q2: What is GitOps and how does ArgoCD implement it?**
+
+**Answer:** GitOps is a set of practices where Git is used as the single source of truth for declarative infrastructure and applications. ArgoCD implements GitOps through:
+- **Pull-based model:** ArgoCD runs inside the cluster and pulls desired state from Git (every 3 minutes by default)
+- **Continuous reconciliation:** Constantly compares live cluster state vs Git
+- **Drift detection:** Identifies manual changes made outside Git
+- **Auto-healing:** Reverts unauthorized manual changes to match Git
+- **Audit trail:** All changes go through Git commits (who, what, when, why)
+
+---
+
+**Q3: What is the difference between ArgoCD and Jenkins?**
+
+**Answer:**
+
+| Aspect | Jenkins | ArgoCD |
+|--------|---------|--------|
+| **Model** | Push-based (pipeline pushes to cluster) | Pull-based (cluster pulls from Git) |
+| **Type** | CI/CD tool (general purpose) | CD tool (Kubernetes-specific) |
+| **Credentials** | Needs cluster credentials externally | Runs inside cluster, no external creds |
+| **Drift Detection** | None | Continuous |
+| **Rollback** | Re-run old pipeline | `git revert` auto-syncs |
+| **Language** | Groovy (Jenkinsfile) | YAML (K8s manifests) |
+| **State** | Stateful (disk-based) | Stateless (state in K8s CRDs + etcd) |
+
+---
+
+**Q4: What are the main features of ArgoCD?**
+
+**Answer:**
+1. GitOps-based automated deployment
+2. Multi-cluster management from single instance
+3. Support for Helm, Kustomize, Jsonnet, plain YAML
+4. Real-time web UI with resource tree visualization
+5. RBAC with SSO/OIDC integration
+6. Automated sync with self-healing
+7. Rollback to any previous revision
+8. Health status monitoring per resource
+9. Sync waves and hooks for ordered deployments
+10. ApplicationSets for templated multi-app/multi-cluster deployments
+11. Notifications (Slack, email, webhook)
+12. Image Updater for auto-detecting new container images
+
+---
+
+**Q5: What is the difference between Continuous Delivery and Continuous Deployment?**
+
+**Answer:**
+- **Continuous Delivery:** Code is always ready to deploy but requires a manual approval/button-click before production deployment.
+- **Continuous Deployment:** Every change that passes automated tests is automatically deployed to production without any manual intervention.
+
+In ArgoCD terms:
+- Continuous Delivery = Manual Sync (`syncPolicy: {}`)
+- Continuous Deployment = Automated Sync (`syncPolicy: automated: {}`)
+
+---
+
+**Q6: What is the difference between Push-based and Pull-based CD?**
+
+**Answer:**
+- **Push-based (Jenkins, GitLab CI):** CI pipeline finishes building → pipeline pushes changes to the cluster using kubectl/helm from outside. The pipeline needs cluster credentials.
+- **Pull-based (ArgoCD, FluxCD):** An agent inside the cluster watches Git. When Git changes, the agent pulls the new state and applies it. No external tool needs cluster access.
+
+**Security implication:** In push-based, if your CI server is compromised, the attacker has production credentials. In pull-based, CI never touches the cluster directly.
+
+---
+
+**Q7: What is an ArgoCD Application?**
+
+**Answer:** An Application is the core CRD (Custom Resource Definition) in ArgoCD. It defines:
+- **Source:** Which Git repo, branch, and path to watch
+- **Destination:** Which cluster and namespace to deploy to
+- **Sync Policy:** Automatic or manual, prune, self-heal settings
+
+It represents one deployed application (or a set of K8s resources from one Git path).
+
+---
+
+**Q8: What is an ArgoCD Project (AppProject)?**
+
+**Answer:** A Project provides multi-tenancy and access control. It defines:
+- Which Git repos are allowed as sources
+- Which clusters and namespaces are allowed as destinations
+- Which K8s resource types can be deployed
+- RBAC roles for team members
+
+The `default` project allows everything. In production, you create specific projects to restrict access per team.
+
+---
+
+### 📘 INTERMEDIATE LEVEL QUESTIONS
+
+---
+
+**Q9: Explain the ArgoCD architecture and its components.**
+
+**Answer:** ArgoCD consists of 7 main components deployed in the `argocd` namespace:
+
+| # | Component | K8s Type | Function |
+|---|-----------|----------|----------|
+| 1 | **argocd-server** | Deployment | API server — serves UI, REST/gRPC API, handles auth, RBAC, webhooks |
+| 2 | **argocd-repo-server** | Deployment | Clones Git repos, renders Helm/Kustomize/Jsonnet, caches manifests |
+| 3 | **argocd-application-controller** | StatefulSet | Brain — compares desired vs live state, triggers sync, health checks |
+| 4 | **argocd-redis** | Deployment | In-memory cache for repo data, sessions, rate limiting |
+| 5 | **argocd-dex-server** | Deployment | SSO/OIDC authentication proxy (GitHub, Google, LDAP login) |
+| 6 | **argocd-applicationset-controller** | Deployment | Generates Applications from templates using generators |
+| 7 | **argocd-notifications-controller** | Deployment | Sends alerts (Slack, email, webhook) on sync/health changes |
+
+---
+
+**Q10: When you install ArgoCD, how many pods are created? Explain each.**
+
+**Answer:** A standard ArgoCD installation creates **7 pods** (one per component):
+
+```bash
+$ kubectl get pods -n argocd
+NAME                                                READY   STATUS    ROLE
+argocd-server-xxxxxxxxxx-xxxxx                      1/1     Running   API Server & Web UI
+argocd-repo-server-xxxxxxxxxx-xxxxx                 1/1     Running   Git clone & manifest generation
+argocd-application-controller-0                     1/1     Running   Reconciliation engine (StatefulSet)
+argocd-redis-xxxxxxxxxx-xxxxx                       1/1     Running   In-memory cache
+argocd-dex-server-xxxxxxxxxx-xxxxx                  1/1     Running   SSO authentication
+argocd-applicationset-controller-xxxxxxxxxx-xxxxx   1/1     Running   ApplicationSet templating
+argocd-notifications-controller-xxxxxxxxxx-xxxxx    1/1     Running   Alert notifications
+```
+
+**Detailed breakdown:**
+
+1. **argocd-server (API Server):**
+   - Serves the Web UI (React frontend)
+   - Exposes REST API and gRPC API
+   - Handles user authentication (local users + SSO via Dex)
+   - Enforces RBAC policies
+   - Processes GitHub/GitLab webhooks for instant sync triggers
+   - Manages Application CRUD operations
+
+2. **argocd-repo-server:**
+   - Clones Git repositories (caches locally)
+   - Executes `helm template` for Helm charts
+   - Runs `kustomize build` for Kustomize overlays
+   - Evaluates Jsonnet files
+   - Returns generated manifests to the Application Controller
+   - Most CPU/memory intensive during large repo operations
+
+3. **argocd-application-controller (StatefulSet):**
+   - The CORE brain of ArgoCD
+   - Continuously compares desired state (from repo-server) with live state (from K8s API)
+   - Detects OutOfSync status
+   - Executes sync operations (kubectl apply)
+   - Performs health assessment on every resource
+   - Triggers auto-healing when drift is detected
+   - Deployed as StatefulSet for sharding support at scale
+
+4. **argocd-redis:**
+   - Caches repository content (avoids repeated Git clones)
+   - Stores user sessions
+   - Provides rate limiting
+   - Message queue for notifications
+   - Speeds up UI responsiveness
+
+5. **argocd-dex-server:**
+   - OpenID Connect (OIDC) identity provider
+   - Integrates with GitHub, Google, LDAP, SAML, Okta
+   - Allows "Login with GitHub" on ArgoCD UI
+   - If you only use local admin user, this pod is idle but still runs
+
+6. **argocd-applicationset-controller:**
+   - Watches ApplicationSet CRDs
+   - Uses generators (Git, List, Cluster, Matrix, Merge) to create Applications
+   - Enables "one template → 100 applications" pattern
+   - Critical for multi-cluster/multi-env deployments
+
+7. **argocd-notifications-controller:**
+   - Watches Application sync/health status changes
+   - Sends notifications via configured channels (Slack, email, Teams, webhook)
+   - Configurable triggers and templates
+
+---
+
+**Q11: Which pod is responsible for actual deployment of applications?**
+
+**Answer:** The **argocd-application-controller** is responsible for the actual deployment. Here's the flow:
+
+```
+1. Application Controller detects app is OutOfSync
+2. Controller requests manifests from Repo Server
+3. Repo Server returns rendered YAML
+4. Controller executes "kubectl apply" (server-side apply) against the target cluster
+5. Controller monitors the rollout until pods are healthy
+6. Updates the Application status accordingly
+```
+
+The controller uses the Kubernetes API directly (it has RBAC permissions to create/update/delete resources). It does NOT shell out to `kubectl` — it uses the K8s Go client library internally.
+
+> **Important distinction:** The argocd-server (API server) handles user requests and UI, but the actual deployment is done by the application-controller.
+
+---
+
+**Q12: What happens when multiple pipelines run at the same time and more pods need to be created?**
+
+**Answer:** This is about ArgoCD scaling under load:
+
+**Scenario:** 50 applications all change at once (e.g., a shared library update triggers many apps).
+
+**What happens internally:**
+
+1. **Repo Server gets overloaded:** Multiple clone/render requests come in simultaneously.
+   - Solution: Scale repo-server replicas (HPA) or increase CPU/memory limits
+   - ArgoCD has a built-in request queue and parallelism settings
+
+2. **Application Controller processes sequentially by default:**
+   - It has configurable `--status-processors` (default: 20) and `--operation-processors` (default: 10)
+   - These control how many apps are reconciled/synced in parallel
+   - For 500+ apps, enable **controller sharding** — multiple controller replicas each handle a subset
+
+3. **K8s cluster resources:**
+   - The target cluster's scheduler creates new pods as demanded by the deployments
+   - ArgoCD doesn't manage pod scaling — Kubernetes HPA/VPA handles that
+   - ArgoCD just applies the desired manifest; K8s does the actual pod scheduling
+
+**Scaling ArgoCD itself:**
+
+```yaml
+# Scale repo-server for heavy repo operations
+kubectl scale deployment argocd-repo-server -n argocd --replicas=3
+
+# Increase controller parallelism
+# Edit argocd-cmd-params-cm ConfigMap:
+data:
+  controller.status.processors: "50"
+  controller.operation.processors: "25"
+
+# Controller sharding (for 500+ apps)
+# Set replicas in the StatefulSet and use --sharding flag
+```
+
+---
+
+**Q13: What are Sync Waves and Sync Hooks? When would you use them?**
+
+**Answer:**
+
+**Sync Waves** control the ORDER of resource creation:
+- Resources with lower wave numbers are synced first
+- Default wave is 0
+- Use case: Create namespace (wave 0) → Create secrets (wave 1) → Deploy database (wave 2) → Deploy app (wave 3)
+
+**Sync Hooks** run custom jobs at specific phases:
+- **PreSync:** Before any resources are applied (DB migrations, backups)
+- **Sync:** During resource application
+- **PostSync:** After all resources are healthy (smoke tests, notifications)
+- **SyncFail:** When sync fails (cleanup, alerting)
+
+**Real-world example:**
+```
+Wave -1: Create Namespace
+Wave 0:  PreSync Hook → Run database migration Job
+Wave 1:  Deploy ConfigMaps and Secrets
+Wave 2:  Deploy Database StatefulSet
+Wave 3:  Deploy Application Deployment
+Wave 4:  PostSync Hook → Run integration test Job
+```
+
+---
+
+**Q14: What is the difference between `argocd app sync` and `argocd app refresh`?**
+
+**Answer:**
+- **Refresh:** Forces ArgoCD to re-fetch the Git repo and recalculate the diff. Does NOT apply changes. Just updates the comparison (desired vs live).
+- **Sync:** Actually APPLIES the desired state to the cluster. Makes live state match Git.
+
+```bash
+argocd app refresh my-app    # "Check Git again, tell me what's different"
+argocd app sync my-app       # "Apply the Git state to the cluster NOW"
+```
+
+---
+
+**Q15: How does ArgoCD handle secrets?**
+
+**Answer:** ArgoCD does NOT have built-in secret management. Common approaches:
+
+| Approach | How It Works |
+|----------|-------------|
+| **Sealed Secrets** | Encrypt secrets, store encrypted version in Git. Controller decrypts in-cluster. |
+| **External Secrets Operator** | References secrets from AWS Secrets Manager/Vault/GCP. ArgoCD syncs the ExternalSecret CRD. |
+| **HashiCorp Vault + AVP** | ArgoCD Vault Plugin replaces placeholders in manifests with Vault values at render time. |
+| **SOPS** | Mozilla SOPS encrypts YAML values. Decrypted during Kustomize/Helm render. |
+| **AWS Secrets Manager** | CSI driver mounts secrets as volumes. ArgoCD deploys the SecretProviderClass. |
+
+> **Best Practice:** Never store plain-text secrets in Git. Use External Secrets Operator or Sealed Secrets.
+
+---
+
+**Q16: What is ApplicationSet? When would you use it?**
+
+**Answer:** ApplicationSet is a controller that generates multiple ArgoCD Applications from a single template using generators.
+
+**Use cases:**
+- Deploy the same app to 10 clusters
+- Create apps for every directory in a monorepo
+- Generate per-team or per-environment applications
+
+**Generators:**
+- **List Generator:** Static list of clusters/values
+- **Cluster Generator:** Auto-discover registered clusters
+- **Git Generator:** Auto-discover directories in a repo
+- **Matrix Generator:** Combine two generators (cartesian product)
+- **Merge Generator:** Merge results from multiple generators
+
+---
+
+### 📕 ADVANCED LEVEL QUESTIONS
+
+---
+
+**Q17: If we delete an ArgoCD pod and it gets recreated, will the admin password reset? Explain why or why not.**
+
+**Answer:** **NO, the admin password will NOT reset when pods are deleted and recreated.**
+
+**Why?**
+
+The admin password is stored in a Kubernetes **Secret** object (`argocd-initial-admin-secret` for initial password, and `argocd-secret` for the active password hash). Secrets are stored in etcd (Kubernetes' persistent data store), NOT inside the pod.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    PASSWORD STORAGE                                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  Pod (argocd-server)          Secret (argocd-secret)             │
+│  ┌───────────────────┐        ┌───────────────────────┐         │
+│  │                     │        │ admin.password:       │         │
+│  │  STATELESS!        │        │   <bcrypt-hash>       │         │
+│  │  No data stored    │◀─reads─│                       │         │
+│  │  inside the pod    │        │ admin.passwordMtime:  │         │
+│  │                     │        │   2024-01-15T10:00    │         │
+│  └───────────────────┘        └───────────────────────┘         │
+│         │                              │                          │
+│    DELETE POD                    PERSISTS IN ETCD                 │
+│         │                        (independent of pods)            │
+│         ▼                              │                          │
+│  Pod recreated by                      │                          │
+│  ReplicaSet/Deployment                 │                          │
+│  ┌───────────────────┐                │                          │
+│  │                     │◀──still reads─┘                          │
+│  │  New pod reads      │                                          │
+│  │  SAME Secret        │    ← Password unchanged!                │
+│  │                     │                                          │
+│  └───────────────────┘                                           │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Technical explanation:**
+- Pods are stateless compute units. They don't store persistent data.
+- The `argocd-server` Deployment's pod reads the password from the `argocd-secret` Secret at startup.
+- When you delete the pod, the Deployment controller recreates it.
+- The new pod reads the SAME Secret from etcd → same password.
+- Even `kubectl rollout restart deployment argocd-server -n argocd` won't change the password.
+
+**When DOES the password change?**
+1. You run `argocd account update-password`
+2. You manually patch `argocd-secret` with a new bcrypt hash
+3. You delete BOTH `argocd-secret` AND `argocd-initial-admin-secret`, then restart — ArgoCD regenerates a new random password
+
+---
+
+**Q18: Explain ArgoCD architecture with a real-time example from your experience.**
+
+**Answer (Sample answer for interviews):**
+
+"In my previous role, we managed a microservices platform with 120+ services across 3 environments (dev, staging, production) on AWS EKS. Here's how ArgoCD architecture worked in our real setup:
+
+**Our Setup:**
+- 1 Management EKS cluster running ArgoCD (managing 3 target clusters)
+- GitHub organization with 120+ repos (application code) + 1 GitOps config repo
+- ArgoCD managing ~360 Applications (120 services × 3 environments)
+
+**How each component worked in practice:**
+
+1. **API Server (argocd-server):** 
+   - Our developers used the ArgoCD UI daily to check deployment status
+   - We had GitHub webhooks configured to notify ArgoCD immediately on push (instead of waiting 3-min poll)
+   - SSO configured via Dex with GitHub OAuth — devs logged in with their GitHub accounts
+
+2. **Repo Server (argocd-repo-server):**
+   - We scaled this to 3 replicas because our Helm charts were complex (10+ subcharts)
+   - Rendering 360 apps' Helm templates was CPU-intensive
+   - We increased cache expiry to reduce Git clone frequency
+
+3. **Application Controller:**
+   - With 360 apps, we enabled sharding (3 replicas)
+   - Each controller shard handled ~120 apps
+   - Status processors set to 50, operation processors to 25
+   - Self-heal enabled on production to prevent kubectl cowboys
+
+4. **Redis:**
+   - Critical for performance — without it, every UI page load would trigger Git clones
+   - We monitored Redis memory usage and set appropriate limits
+
+5. **Dex:**
+   - GitHub SSO let us map GitHub teams to ArgoCD RBAC roles
+   - `backend-team` GitHub group → can only sync apps in `team-backend` Project
+   - `platform-team` → admin access to all Projects
+
+6. **ApplicationSet Controller:**
+   - We used Git Generator to auto-discover new services
+   - When a dev created a new service directory in the config repo, ApplicationSet automatically created the ArgoCD Application for all 3 environments
+   - This was our 'self-service' — no tickets needed for new service onboarding
+
+7. **Notifications Controller:**
+   - Slack alerts on sync failures and degraded health
+   - On-call engineer got paged via PagerDuty webhook when production apps went Degraded
+
+**Failure scenario we handled:**
+A developer accidentally ran `kubectl scale deployment payment-service --replicas=0` in production at 2 AM. Because self-heal was enabled, ArgoCD detected the drift within 30 seconds and scaled it back to the Git-defined 5 replicas. Zero customer impact. No human intervention needed."
+
+---
+
+**Q19: How do you handle multi-cluster deployments with ArgoCD?**
+
+**Answer:**
+
+**Approach 1: Hub-Spoke Model (Recommended)**
+- One ArgoCD instance in a management cluster
+- Register target clusters via `argocd cluster add`
+- ApplicationSets with Cluster Generator to deploy across all clusters
+
+```bash
+# Register a target cluster
+argocd cluster add eks-production-cluster --name production
+
+# ArgoCD stores cluster credentials as K8s Secrets
+kubectl get secrets -n argocd -l argocd.argoproj.io/secret-type=cluster
+```
+
+**Approach 2: ArgoCD per Cluster**
+- Each cluster runs its own ArgoCD
+- More isolated, but harder to manage centrally
+- Used when strict network isolation is required
+
+**Best Practice:** Hub-spoke for 90% of cases. One ArgoCD managing up to 100 clusters works well with proper resource allocation.
+
+---
+
+**Q20: What is the difference between `prune: true` and `selfHeal: true`?**
+
+**Answer:**
+
+| Feature | `prune: true` | `selfHeal: true` |
+|---------|---------------|-------------------|
+| **What it does** | Deletes resources that exist in cluster but NOT in Git | Reverts manual changes to resources that ARE in Git |
+| **Direction** | Removes extra resources | Restores existing resources |
+| **Example** | You remove a ConfigMap from Git → ArgoCD deletes it from cluster | Someone scales deployment from 3 to 1 → ArgoCD scales back to 3 |
+| **Risk** | Can accidentally delete if you remove a file from Git by mistake | Can undo intentional emergency changes |
+
+**Both together provide full GitOps enforcement:**
+```yaml
+syncPolicy:
+  automated:
+    prune: true      # Delete what's not in Git
+    selfHeal: true   # Revert what's been changed from Git
+```
+
+---
+
+**Q21: How does ArgoCD detect drift? What's the reconciliation loop?**
+
+**Answer:**
+
+ArgoCD's Application Controller runs a continuous reconciliation loop:
+
+1. **Every 3 minutes** (default, configurable via `timeout.reconciliation` in argocd-cm):
+   - Controller queries Repo Server for desired manifests
+   - Controller queries K8s API for live state
+   - Performs a 3-way diff (desired vs live vs last-applied)
+   
+2. **On webhook trigger** (if configured):
+   - GitHub/GitLab sends a webhook to ArgoCD on push
+   - ArgoCD immediately refreshes the affected Application
+
+3. **Diff algorithm:**
+   - Compares every field in every resource
+   - Uses `ignoreDifferences` config to skip dynamic fields (e.g., `.status`, `.metadata.resourceVersion`)
+   - Uses normalized JSON comparison
+
+4. **If drift detected:**
+   - Status changes to `OutOfSync`
+   - If auto-sync enabled → applies desired state
+   - If manual → waits for user action
+   - Notifications sent if configured
+
+---
+
+**Q22: What happens if Git is unavailable? Does ArgoCD still work?**
+
+**Answer:**
+- **Existing applications continue running.** ArgoCD doesn't affect running workloads if Git is down.
+- **Reconciliation pauses.** ArgoCD can't fetch new desired state, so it marks apps with a "refresh failed" error.
+- **No new syncs** can happen because ArgoCD can't read the desired state.
+- **Redis cache helps temporarily** — if the repo was recently cached, ArgoCD may still show correct diff.
+- **When Git comes back,** ArgoCD automatically resumes reconciliation within the next poll cycle.
+
+> ArgoCD is designed to be resilient to Git outages. It uses an eventual consistency model — it will catch up once Git is available again.
+
+---
+
+**Q23: How do you handle rollbacks in ArgoCD?**
+
+**Answer:**
+
+**Method 1: Git Revert (Preferred — maintains history)**
+```bash
+git revert <bad-commit>
+git push
+# ArgoCD auto-syncs to the previous state
+```
+
+**Method 2: ArgoCD Rollback (Quick, but temporary if auto-sync is on)**
+```bash
+argocd app rollback my-app <revision-number>
+```
+
+**Method 3: Pin to a specific Git commit**
+```yaml
+source:
+  targetRevision: "abc123def"  # Pin to exact commit SHA
+```
+
+**Important:** If `automated sync` is enabled and you rollback via CLI/UI, ArgoCD will re-sync to the latest Git state on the next reconciliation. For permanent rollback, ALWAYS use `git revert`.
+
+---
+
+**Q24: What is the App of Apps pattern?**
+
+**Answer:** A pattern where one "parent" ArgoCD Application manages other ArgoCD Applications as resources.
+
+```
+Root Application (app-of-apps)
+├── Application: frontend
+├── Application: backend
+├── Application: database
+├── Application: monitoring
+└── Application: ingress
+```
+
+**Benefits:**
+- Bootstrap entire environments with a single Application
+- Hierarchical management (one sync → deploys everything)
+- Team-level grouping
+
+**Example root app:**
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root-app
+spec:
+  source:
+    repoURL: https://github.com/org/gitops-config.git
+    path: apps/          # This folder contains Application YAML files
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd    # Applications are in argocd namespace
+```
+
+---
+
+**Q25: How do you secure ArgoCD in production?**
+
+**Answer:**
+
+| Security Layer | Implementation |
+|---------------|----------------|
+| **Authentication** | SSO via OIDC/SAML (disable local admin in production) |
+| **Authorization** | RBAC policies per project/team |
+| **Network** | TLS termination, network policies, restrict API access |
+| **Secrets** | External Secrets Operator / Sealed Secrets (never plain in Git) |
+| **Git Access** | Deploy keys (read-only) per repo, not personal tokens |
+| **Audit** | Enable audit logging, integrate with SIEM |
+| **Sync Windows** | Restrict deployments to business hours only |
+| **Resource Quotas** | Limit what each Project can deploy |
+| **Image Allowlist** | Restrict which container registries are allowed |
+| **Cluster Access** | Least-privilege ServiceAccount for target clusters |
+
+---
+
+### 📙 SCENARIO-BASED / PRACTICAL QUESTIONS
+
+---
+
+**Q26: You deployed ArgoCD and noticed the application shows "OutOfSync" but nothing has changed in Git. What could be the reason?**
+
+**Answer:** Common causes for false OutOfSync:
+
+1. **Dynamic fields:** Kubernetes adds fields like `.metadata.resourceVersion`, `.metadata.uid`, `.status` that differ from Git. Fix: Use `ignoreDifferences` in the Application spec.
+
+2. **Default values:** K8s API server adds default values not in your YAML (e.g., `spec.restartPolicy: Always`). Fix: Explicitly define all important fields or use `ignoreDifferences`.
+
+3. **Mutating webhooks:** Admission controllers (like Istio sidecar injector) modify pod specs. Fix: Ignore injected sidecar fields.
+
+4. **HPA conflicts:** HPA changes `.spec.replicas` but Git has a fixed number. Fix: Remove `replicas` from Git manifest or ignore it:
+   ```yaml
+   ignoreDifferences:
+     - group: apps
+       kind: Deployment
+       jsonPointers:
+         - /spec/replicas
+   ```
+
+5. **Last-applied-configuration annotation:** Old `kubectl apply` annotations causing diff. Fix: Use `ServerSideApply=true` sync option.
+
+---
+
+**Q27: Your ArgoCD application is stuck in "Progressing" state. How do you debug?**
+
+**Answer:**
+
+```bash
+# Step 1: Check application details
+argocd app get my-app
+
+# Step 2: Check for resource-level issues
+argocd app resources my-app
+
+# Step 3: Look at events
+kubectl describe deployment <name> -n <namespace>
+
+# Step 4: Check pod status
+kubectl get pods -n <namespace>
+kubectl describe pod <pod-name> -n <namespace>
+
+# Step 5: Check for image pull issues
+kubectl get events -n <namespace> --sort-by='.lastTimestamp'
+
+# Step 6: Check ArgoCD controller logs
+kubectl logs -n argocd deployment/argocd-application-controller --tail=100
+
+# Step 7: Check resource health
+argocd app get my-app --show-operation
+```
+
+Common causes:
+- Image not found (wrong tag or private registry auth)
+- Insufficient resources (CPU/memory limits exceeded, no node capacity)
+- Readiness probe failing
+- PVC not binding (storage class issue)
+- Init containers stuck
+
+---
+
+**Q28: How would you migrate from Jenkins-based CD to ArgoCD in a running production environment?**
+
+**Answer (step-by-step approach):**
+
+1. **Parallel run:** Install ArgoCD alongside Jenkins. Don't disable Jenkins yet.
+2. **Start with non-production:** Set up ArgoCD for dev/staging first.
+3. **Create GitOps repo:** Move K8s manifests from Jenkins pipeline into a dedicated Git config repo.
+4. **Manual sync first:** Configure ArgoCD apps with manual sync policy initially.
+5. **Validate:** Compare Jenkins deployments vs ArgoCD deployments. Ensure identical results.
+6. **Enable auto-sync for staging:** Once confident, enable automated sync for staging.
+7. **Production cutover:** After 2-4 weeks of staging success, move production to ArgoCD.
+8. **Remove Jenkins deploy stages:** Keep Jenkins for CI (build/test), remove CD steps.
+9. **Monitor:** Watch for drift detection catching issues Jenkins missed.
+10. **Decommission:** After all environments are on ArgoCD, remove Jenkins CD plugins.
+
+**Key principle:** Never do a big-bang migration. Gradual, environment-by-environment.
+
+---
+
+**Q29: A developer accidentally deleted a namespace in production. How does ArgoCD help recover?**
+
+**Answer:**
+
+**With ArgoCD (GitOps approach):**
+1. ArgoCD detects the namespace and all its resources are "Missing"
+2. If `selfHeal: true` and `CreateNamespace=true` in sync options:
+   - ArgoCD automatically recreates the namespace
+   - Recreates all resources defined in Git
+   - Full recovery in minutes without human intervention
+3. If manual sync: Click "Sync" in UI → everything rebuilds from Git
+
+**Recovery timeline:**
+```
+00:00  Namespace deleted accidentally
+00:03  ArgoCD reconciliation detects all resources are Missing
+00:03  Auto-sync triggers (if enabled)
+00:04  Namespace recreated
+00:05  All deployments, services, configmaps recreated
+00:07  Pods scheduled and running
+00:10  Application healthy again ✅
+```
+
+**Without GitOps:**
+- Scramble to find what was in the namespace
+- Search through old kubectl commands, CI logs, chat messages
+- Manually recreate each resource one by one
+- Recovery takes hours, may be incomplete
+
+---
+
+**Q30: How do you implement a canary deployment with ArgoCD?**
+
+**Answer:** ArgoCD alone does basic deployments. For advanced strategies (canary, blue-green), use **Argo Rollouts**:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: my-app
+spec:
+  replicas: 10
+  strategy:
+    canary:
+      steps:
+        - setWeight: 10      # Send 10% traffic to new version
+        - pause: {duration: 5m}   # Wait 5 minutes
+        - setWeight: 30      # Increase to 30%
+        - pause: {duration: 5m}
+        - setWeight: 50      # 50%
+        - pause: {duration: 10m}
+        - setWeight: 100     # Full rollout
+      canaryService: my-app-canary
+      stableService: my-app-stable
+```
+
+ArgoCD manages the Rollout resource via GitOps. Argo Rollouts controller handles the progressive traffic shifting.
+
+---
+
+**Q31: Your company has 50 microservices. How do you structure the Git repository for ArgoCD?**
+
+**Answer:** Two recommended approaches:
+
+**Approach 1: Monorepo (Config repo)**
+```
+gitops-config/
+├── apps/
+│   ├── service-a/
+│   │   ├── base/
+│   │   │   ├── deployment.yaml
+│   │   │   ├── service.yaml
+│   │   │   └── kustomization.yaml
+│   │   └── overlays/
+│   │       ├── dev/
+│   │       ├── staging/
+│   │       └── production/
+│   ├── service-b/
+│   └── service-c/
+├── infrastructure/
+│   ├── monitoring/
+│   ├── ingress/
+│   └── cert-manager/
+└── applicationsets/
+    └── all-services.yaml    # One ApplicationSet generates all apps
+```
+
+**Approach 2: Multi-repo**
+- Each team has their own config repo
+- ArgoCD Projects restrict which repos each team can use
+- Better for large orgs with strict team boundaries
+
+**Best Practice:** Start with monorepo. Split into multi-repo only when team size requires it.
+
+---
+
+**Q32: What is the difference between `helm install` and deploying Helm charts through ArgoCD?**
+
+**Answer:**
+
+| Aspect | `helm install` (direct) | ArgoCD + Helm |
+|--------|------------------------|---------------|
+| **State management** | Helm stores release in K8s Secret | ArgoCD manages state via CRDs |
+| **Drift detection** | None (Helm doesn't watch) | Continuous reconciliation |
+| **Rollback** | `helm rollback` (from release history) | `git revert` (from Git history) |
+| **Values management** | CLI flags or values file | values.yaml in Git (version controlled) |
+| **Visibility** | `helm list` only | Full UI visualization |
+| **Team collaboration** | SSH + run command | Git PR → review → merge → auto-deploy |
+| **Audit trail** | Helm release history (limited) | Full Git commit history |
+
+ArgoCD runs `helm template` (render only) and then applies the output. It does NOT use `helm install/upgrade`. This means Helm hooks and lifecycle management work differently — ArgoCD uses its own sync waves and hooks instead.
+
+---
+
+**Q33: How do you monitor ArgoCD itself in production?**
+
+**Answer:**
+
+ArgoCD exposes Prometheus metrics on port 8082 (controller) and 8083 (server).
+
+**Key metrics to monitor:**
+
+| Metric | Alert Threshold | Meaning |
+|--------|----------------|---------|
+| `argocd_app_info{health_status="Degraded"}` | > 0 | Unhealthy apps |
+| `argocd_app_sync_total{phase="Failed"}` | Increasing | Sync failures |
+| `argocd_app_reconcile_duration_seconds` | > 60s | Slow reconciliation |
+| `argocd_git_request_duration_seconds` | > 30s | Slow Git operations |
+| `argocd_redis_request_duration` | > 5s | Redis performance issues |
+| `argocd_cluster_api_resource_objects` | Sudden drop | Cluster connectivity issue |
+
+**Setup:**
+```bash
+# Install Prometheus ServiceMonitor for ArgoCD
+kubectl apply -f argocd-service-monitors.yaml
+
+# Import ArgoCD Grafana dashboard (ID: 14584)
+```
+
+---
+
+**Q34: What is the `argocd-cm` ConfigMap and what can you configure in it?**
+
+**Answer:** `argocd-cm` is the main configuration ConfigMap for ArgoCD.
+
+Key configurations:
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+data:
+  # Git repository poll interval
+  timeout.reconciliation: "180"    # seconds (default: 180 = 3 min)
+  
+  # URL for ArgoCD server (used in notifications/UI links)
+  url: "https://argocd.company.com"
+  
+  # Enable admin user (disable in production with SSO)
+  admin.enabled: "true"
+  
+  # OIDC/SSO configuration
+  oidc.config: |
+    name: GitHub
+    issuer: https://dex.argocd.company.com
+    clientID: xxxxxxxx
+    clientSecret: $dex.github.clientSecret
+  
+  # Resource exclusions (don't track these)
+  resource.exclusions: |
+    - apiGroups: [""]
+      kinds: ["Event"]
+      clusters: ["*"]
+  
+  # Custom health checks
+  resource.customizations.health.networking.k8s.io_Ingress: |
+    hs = {}
+    hs.status = "Healthy"
+    return hs
+```
+
+---
+
+**Q35: How does ArgoCD handle Helm value files from different environments?**
+
+**Answer:**
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app-production
+spec:
+  source:
+    repoURL: https://github.com/org/helm-charts.git
+    path: charts/my-app
+    targetRevision: main
+    helm:
+      # Multiple values files (applied in order, last wins)
+      valueFiles:
+        - values.yaml              # Base values
+        - values-production.yaml   # Production overrides
+      
+      # Inline parameter overrides
+      parameters:
+        - name: image.tag
+          value: "v2.3.1"
+        - name: replicas
+          value: "5"
+      
+      # Or reference values from another repo
+      # valuesObject for inline YAML values
+```
+
+**Multi-environment with Kustomize (alternative):**
+```
+my-app/
+├── base/
+│   ├── deployment.yaml
+│   └── kustomization.yaml
+└── overlays/
+    ├── dev/
+    │   └── kustomization.yaml       # replicas: 1, image: dev
+    ├── staging/
+    │   └── kustomization.yaml       # replicas: 2, image: staging
+    └── production/
+        └── kustomization.yaml       # replicas: 5, image: production
+```
+
+---
+
+**Q36: What are ArgoCD Resource Hooks and when would you use them?**
+
+**Answer:** Resource Hooks are Kubernetes resources (usually Jobs) that run at specific sync phases.
+
+**Practical use cases:**
+
+| Phase | Use Case | Example |
+|-------|----------|---------|
+| **PreSync** | Database migration before deploying app | `python manage.py migrate` |
+| **PreSync** | Backup before risky deployment | `pg_dump > backup.sql` |
+| **PostSync** | Run smoke tests after deployment | `curl health-endpoint` |
+| **PostSync** | Notify team on successful deploy | Send Slack message |
+| **SyncFail** | Clean up partial deployment | Delete temp resources |
+| **SyncFail** | Alert on-call team | PagerDuty webhook |
+
+**Hook delete policies:**
+- `HookSucceeded`: Delete the Job after it succeeds
+- `HookFailed`: Delete the Job after it fails
+- `BeforeHookCreation`: Delete previous hook before creating new one
+
+---
+
+**Q37: Explain the difference between ArgoCD Application health vs sync status.**
+
+**Answer:**
+
+| Aspect | Sync Status | Health Status |
+|--------|-------------|---------------|
+| **What it checks** | Does live state match Git? | Are resources actually working? |
+| **Values** | Synced, OutOfSync, Unknown | Healthy, Degraded, Progressing, Missing, Suspended |
+| **Example: Synced + Degraded** | Git says 3 replicas, cluster has 3 replicas (Synced) but 2 are CrashLooping (Degraded) |
+| **Example: OutOfSync + Healthy** | Someone scaled to 5 (OutOfSync from Git's 3) but all 5 pods are running fine (Healthy) |
+
+**They are independent:**
+- An app can be `Synced + Degraded` (matches Git but not working)
+- An app can be `OutOfSync + Healthy` (doesn't match Git but is working)
+- Ideal state: `Synced + Healthy` ✅
+
+---
+
+**Q38: How do you handle database migrations with ArgoCD?**
+
+**Answer:** Use PreSync hooks with Jobs:
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "-1"    # Run before everything
+spec:
+  template:
+    spec:
+      containers:
+      - name: migrate
+        image: myapp:v2.0
+        command: ["python", "manage.py", "migrate", "--no-input"]
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: url
+      restartPolicy: Never
+  backoffLimit: 3
+```
+
+**Flow:**
+1. Developer merges PR with new migration + new code
+2. ArgoCD detects change
+3. PreSync: Migration Job runs first
+4. If migration succeeds → Sync: Deploy new application version
+5. If migration fails → Sync aborted, app stays on old version
+
+---
+
+**Q39: What is controller sharding and when do you need it?**
+
+**Answer:**
+
+**Controller sharding** allows running multiple Application Controller replicas, each managing a subset of applications.
+
+**When needed:** When you have 500+ Applications and single controller becomes a bottleneck.
+
+**How it works:**
+- Each Application is assigned a shard based on its name hash
+- Each controller replica only processes applications in its shard
+- Uses Redis for coordination
+
+**Configuration:**
+```yaml
+# argocd-application-controller StatefulSet
+spec:
+  replicas: 3    # 3 shards
+  template:
+    spec:
+      containers:
+      - name: argocd-application-controller
+        env:
+        - name: ARGOCD_CONTROLLER_REPLICAS
+          value: "3"
+```
+
+**Scaling guidelines:**
+| Applications | Controller Replicas | Status Processors | Operation Processors |
+|-------------|--------------------|--------------------|---------------------|
+| < 100 | 1 | 20 (default) | 10 (default) |
+| 100-500 | 1-2 | 50 | 25 |
+| 500-1000 | 3-5 | 100 | 50 |
+| 1000+ | 5-10 | 200 | 100 |
+
+---
+
+**Q40: What happens to ArgoCD-managed resources when you delete the ArgoCD Application?**
+
+**Answer:** It depends on the **finalizer** and **cascade delete** setting:
+
+**With finalizer (default):**
+```yaml
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+```
+→ Deleting the Application also **deletes all managed K8s resources** (cascading delete).
+
+**Without finalizer:**
+```yaml
+metadata:
+  finalizers: []    # or remove the finalizer
+```
+→ Deleting the Application leaves K8s resources running (orphaned).
+
+**CLI options:**
+```bash
+# Delete app AND all its resources (cascade)
+argocd app delete my-app --cascade
+
+# Delete app but KEEP resources running (non-cascade)
+argocd app delete my-app --cascade=false
+```
+
+> **Production tip:** In production, always double-check cascade settings. Accidentally deleting an Application with cascade=true will delete the running workloads!
+
+---
+
+### 📓 RAPID-FIRE QUESTIONS (Quick Answers)
+
+---
+
+| # | Question | Answer |
+|---|----------|--------|
+| 41 | What port does ArgoCD UI run on? | 443 (HTTPS) by default. We port-forward to 8080 for convenience. |
+| 42 | What is the default sync interval? | 3 minutes (180 seconds), configurable in `argocd-cm` |
+| 43 | Can ArgoCD deploy to non-Kubernetes targets? | No. ArgoCD is Kubernetes-only. For VMs, use Ansible/Terraform. |
+| 44 | What is the `default` project in ArgoCD? | A pre-created project that allows all sources, all destinations. Restrict in production. |
+| 45 | How does ArgoCD compare desired vs live state? | Uses a 3-way diff: desired (Git) vs live (cluster) vs last-applied annotation |
+| 46 | Can ArgoCD manage itself? | Yes! "Argo manages Argo" pattern — ArgoCD application that syncs its own installation. |
+| 47 | What is `targetRevision` in Application spec? | The Git branch, tag, or commit SHA to track. `HEAD` means latest on default branch. |
+| 48 | What happens if two Applications deploy to the same namespace? | Both work fine unless they manage the same resource (conflict). Use `FailOnSharedResource` option. |
+| 49 | Can you sync specific resources only? | Yes! `argocd app sync my-app --resource apps:Deployment:my-deploy` |
+| 50 | What is the health check interval? | Same as reconciliation interval (3 min default). Health is assessed during each reconciliation. |
+| 51 | Does ArgoCD support Terraform? | Not natively. Use Crossplane or Terraform Controller CRDs which ArgoCD can manage. |
+| 52 | What is `replace` vs `apply` in sync? | Apply = patch existing. Replace = delete and recreate. Use replace for immutable fields. |
+| 53 | How to temporarily disable auto-sync? | `argocd app set my-app --sync-policy none` or remove automated from spec |
+| 54 | What is Sync Window? | Time-based restriction: "only allow sync Mon-Fri 9am-5pm". Protects production off-hours. |
+| 55 | How to force sync even if app is synced? | `argocd app sync my-app --force` or use `Replace=true` sync option |
+| 56 | What K8s version does ArgoCD support? | Officially supports N-2 (current and two previous minor versions) |
+| 57 | Can ArgoCD deploy CRDs? | Yes. CRDs sync first by default (built-in wave ordering). |
+| 58 | What is `ignoreDifferences`? | Tells ArgoCD to skip certain fields during diff (e.g., fields managed by HPA or mutating webhooks) |
+| 59 | How to see what ArgoCD would deploy without deploying? | `argocd app diff my-app` shows the diff. Or use `--dry-run` with sync. |
+| 60 | What is the maximum number of apps ArgoCD can manage? | No hard limit. Tested up to 10,000+ with proper sharding and resource allocation. |
+
+---
+
+### 🏆 BONUS: Top 5 Questions Interviewers Love to Ask
+
+1. **"Walk me through what happens from git push to production deployment with ArgoCD."**
+   - Dev pushes code → CI builds image → CI updates image tag in config repo → ArgoCD detects change → ArgoCD syncs → New pods rolled out → Health check passes → Done.
+
+2. **"How would you handle a production incident at 3 AM where ArgoCD keeps reverting a hotfix?"**
+   - Disable auto-sync for that app: `argocd app set my-app --sync-policy none`
+   - Apply the hotfix manually
+   - After incident: commit the fix to Git, re-enable auto-sync
+
+3. **"Your ArgoCD repo-server is consuming 8GB RAM. What do you do?"**
+   - Check which repos are large (repo-server caches entire repos)
+   - Enable shallow clones: `GIT_CLONE_DEPTH=1`
+   - Increase replicas to distribute load
+   - Check if Helm charts have large dependencies
+   - Reduce `reposerver.parallelism.limit`
+
+4. **"How do you implement environment promotion (dev → staging → prod) with ArgoCD?"**
+   - Kustomize overlays per environment
+   - PR from dev overlay to staging overlay
+   - Automated sync in dev, manual/approval in staging, sync windows in prod
+   - Or: use branch-per-environment strategy with PRs for promotion
+
+5. **"Explain a situation where GitOps (ArgoCD) is NOT the right choice."**
+   - Non-Kubernetes workloads (VMs, bare-metal)
+   - Batch processing systems that need imperative control
+   - Very small teams with 1-2 services (overhead not justified)
+   - Legacy systems that can't be described declaratively
+   - Systems requiring complex orchestration Jenkins is better at (approval gates across multiple systems)
+
+---
+
+> 💡 **Interview Tip:** Always relate answers to your real experience. Interviewers value practical examples over textbook definitions. Use the STAR method (Situation, Task, Action, Result) for scenario questions.
+
+---
+
+## 🎓 Credits & Connect
+
+| Platform | Link |
+|----------|------|
+| 🎥 YouTube | [TECH MAHATO](https://www.youtube.com/techmahato) |
+| 📝 Medium Blog | [Tech Mahato on Medium](https://medium.com/@techmahato) |
+| 💼 LinkedIn | [Arbind Kr. Mahato](https://www.linkedin.com/in/arbindmahato/) |
+| 🌐 Website | [techmahato.com](https://techmahato.com) |
+| 🐙 GitHub | [techmahato](https://github.com/techmahato) |
+
+---
+
+> 🙏 **If this helped you crack your interview, please Star ⭐ the repo and Subscribe 🔔 to [TECH MAHATO on YouTube](https://www.youtube.com/techmahato)!**
+>
+> 💡 **Next:** Move to `03_setup_installation` to set up ArgoCD hands-on!
