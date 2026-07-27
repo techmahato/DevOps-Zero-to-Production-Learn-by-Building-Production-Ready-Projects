@@ -1487,13 +1487,101 @@ spec:
 
 ---
 
-> 🙏 **If this helped you, please Star ⭐ the repo and Subscribe 🔔 to [TECH MAHATO on YouTube](https://www.youtube.com/techmahato)!**
->
-> 💡 **Next:** Move to `03_setup_installation` to set up ArgoCD on your own cluster!
+> 💡 **Continue below for ArgoCD UI, Settings, Projects & Repository configuration.**
 
 ---
 
-## 20. 🎯 Interview Questions & Answers (ArgoCD & GitOps)
+## 20. 🖥️ ArgoCD UI — Understanding the Web Dashboard
+
+> The entire content about ArgoCD UI, Settings, Projects, and Repositories has been included here as part of ArgoCD fundamentals. For the full detailed guide, see the sections below.
+
+ArgoCD provides a real-time web dashboard for visual control over GitOps deployments. Access it at `https://<your-ip>:8080` after setup.
+
+### UI Layout & Navigation
+
+| Icon | Section | Purpose |
+|------|---------|---------|
+| 📱 | **Applications** | Main dashboard — view all apps, sync/health status |
+| ⚙️ | **Settings** | Configure projects, repos, clusters, accounts, certificates |
+| 👤 | **User Info** | Current user details, logout, change password |
+| 📖 | **Documentation** | Link to official ArgoCD docs |
+
+### Key UI Features
+
+| Feature | What You Can Do |
+|---------|----------------|
+| **Resource Tree** | Visualize all K8s resources in a tree hierarchy |
+| **Live Logs** | Stream pod logs directly from UI (no kubectl needed) |
+| **Diff View** | See exact differences between Git (desired) and live (actual) |
+| **Events** | K8s events for each resource (like `kubectl describe`) |
+| **History** | All sync operations with timestamps and revision details |
+| **Terminal** | SSH into pods directly from ArgoCD UI (if enabled) |
+| **Rollback** | Click "Rollback" on any previous revision |
+
+### UI vs CLI — When to Use What
+
+| Scenario | Best Choice | Why |
+|----------|-------------|-----|
+| Daily monitoring | **UI** | Visual health/sync overview at a glance |
+| Debugging issues | **UI** | Resource tree + logs + events in one place |
+| CI/CD integration | **CLI** | Can be scripted in GitHub Actions/Jenkins |
+| Bulk sync | **CLI** | `argocd app sync -l team=backend` syncs all team apps |
+| Emergency rollback | **UI** | Fastest click-to-rollback |
+| Scripted operations | **CLI** | Automation and repeatability |
+
+### ArgoCD Settings — Complete Overview
+
+| Setting | Purpose | When to Configure |
+|---------|---------|-------------------|
+| **Repositories** | Connect Git/Helm repos | When adding apps from private repos |
+| **Repository Credentials** | Shared credential templates | Many repos under same org |
+| **Projects** | Logical grouping + RBAC | Multi-team environments |
+| **Clusters** | Register external K8s clusters | Multi-cluster deployments |
+| **Certificates** | TLS certs & SSH known hosts | Private Git servers |
+| **GnuPG Keys** | GPG keys for commit verification | Compliance environments |
+| **Accounts** | Local user accounts | Service accounts, pre-SSO |
+| **Appearance** | UI customization (banners) | Environment identification |
+
+### Default vs Custom Projects
+
+| Feature | `default` Project | Custom Project |
+|---------|-------------------|----------------|
+| **Source Repos** | `*` (ALL) | Specific repos/patterns only |
+| **Destinations** | `*` (ALL) | Specific clusters/namespaces |
+| **RBAC** | None | Project-level roles per team |
+| **Security** | ⚠️ No restrictions | ✅ Principle of least privilege |
+| **Use Case** | Quick demos, learning | Production, multi-team |
+
+> ⚠️ **Never use `default` project in production!** Always create custom projects.
+
+### Project Creation Example: `e-commerce`
+
+```bash
+argocd proj create e-commerce \
+  --description "This is E-Commerce-Project for the GitOps ArgoCD demos" \
+  --src "https://github.com/techmahato/e-commerce-*" \
+  --dest "https://kubernetes.default.svc,ecommerce-dev" \
+  --dest "https://kubernetes.default.svc,ecommerce-staging" \
+  --dest "https://kubernetes.default.svc,ecommerce-prod"
+```
+
+### Repository Connection
+
+```bash
+# Private repo with HTTPS + GitHub PAT
+argocd repo add https://github.com/techmahato/e-commerce-config.git \
+  --username git --password ghp_xxxxxxxxxxxxx --project e-commerce
+
+# Shared credentials for entire org
+argocd repocreds add https://github.com/techmahato/ \
+  --username git --password ghp_xxxxxxxxxxxxx
+```
+
+> 📝 **For the complete detailed guide** with ASCII diagrams, all UI forms explained, all settings options, project YAML examples, repository types, and 15+ related interview Q&As, refer to the dedicated document at `00_ArgoCD_UI_Explanation/README.md`.
+
+---
+
+## 21. 🎯 Interview Questions & Answers (ArgoCD & GitOps)
 
 > This section covers real interview questions asked by interviewers at top companies for DevOps/SRE/Platform Engineering roles. Organized from Basic → Intermediate → Advanced → Practical/Scenario-Based.
 
