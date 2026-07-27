@@ -18,7 +18,7 @@
 6. [Step 4: Deploy Application — Three Methods](#6-step-4-deploy-application--three-methods)
 7. [Method 1: UI Approach (NGINX)](#7-method-1-ui-approach-nginx)
 8. [Method 2: CLI Approach (Apache)](#8-method-2-cli-approach-apache)
-9. [Method 3: Declarative Approach (Online Shop)](#9-method-3-declarative-approach-online-shop)
+9. [Method 3: Declarative Approach (Online Shop)](#9-method-3-declarative-approach-online-e-commerce)
 10. [Comparison: UI vs CLI vs Declarative](#10-comparison-ui-vs-cli-vs-declarative)
 11. [Verify & Monitor Deployment](#11-verify--monitor-deployment)
 12. [Sync, Rollback & Troubleshoot](#12-sync-rollback--troubleshoot)
@@ -102,7 +102,7 @@ For this hands-on, we'll use these repos:
 
 ```bash
 # Fork this repo first, then clone:
-git clone https://github.com/<your-username>/argocd-demos.git
+git clone https://github.com/techmahato/argocd-demos.git
 ```
 
 **Repository structure:**
@@ -116,7 +116,7 @@ argocd-demos/
 │   ├── deployment.yaml
 │   ├── service.yaml
 │   └── namespace.yaml
-└── online-shop/              # Microservices app (Declarative approach)
+└── online-e-commerce/              # Microservices app (Declarative approach)
     ├── deployment.yaml
     ├── service.yaml
     └── namespace.yaml
@@ -474,7 +474,7 @@ Deploy an **Apache** application using the `argocd` CLI. Better than UI because 
 
 ```bash
 argocd app create apache-app \
-  --repo https://github.com/<your-username>/argocd-demos.git \
+  --repo https://github.com/techmahato/argocd-demos.git \
   --path apache \
   --dest-server https://kubernetes.default.svc \
   --dest-namespace apache-app \
@@ -613,11 +613,11 @@ Deploy an **Online Shop** application by defining an ArgoCD Application CRD in a
 **1. Create the Application YAML file:**
 
 ```yaml
-# online-shop-app.yaml
+# online-e-commerce-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: online-shop
+  name: online-e-commerce
   namespace: argocd        # Application CRD always lives in argocd namespace
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -626,14 +626,14 @@ spec:
 
   # SOURCE: Where the manifests live
   source:
-    repoURL: https://github.com/<your-username>/argocd-demos.git
+    repoURL: https://github.com/techmahato/argocd-demos.git
     targetRevision: main
-    path: online-shop      # Folder in the repo containing manifests
+    path: online-e-commerce      # Folder in the repo containing manifests
 
   # DESTINATION: Where to deploy
   destination:
     server: https://kubernetes.default.svc
-    namespace: online-shop
+    namespace: online-e-commerce
 
   # SYNC POLICY: How to sync
   syncPolicy:
@@ -657,12 +657,12 @@ spec:
 **2. Apply the Application YAML:**
 
 ```bash
-kubectl apply -f online-shop-app.yaml
+kubectl apply -f online-e-commerce-app.yaml
 ```
 
 **3. ArgoCD automatically:**
 - Clones the Git repo
-- Reads manifests from `online-shop/` path
+- Reads manifests from `online-e-commerce/` path
 - Creates the namespace (because `CreateNamespace=true`)
 - Deploys all resources
 - Monitors health continuously
@@ -672,13 +672,13 @@ kubectl apply -f online-shop-app.yaml
 
 ```bash
 # Check via CLI
-argocd app get online-shop
+argocd app get online-e-commerce
 
 # Check via kubectl
-kubectl get all -n online-shop
+kubectl get all -n online-e-commerce
 
 # Check in ArgoCD UI
-# Go to https://<EC2_IP>:8080 → Click on "online-shop" app
+# Go to https://<EC2_IP>:8080 → Click on "online-e-commerce" app
 ```
 
 ### Declarative with Helm Chart
@@ -687,14 +687,14 @@ kubectl get all -n online-shop
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: online-shop-helm
+  name: online-e-commerce-helm
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/<your-username>/argocd-demos.git
+    repoURL: https://github.com/techmahato/argocd-demos.git
     targetRevision: main
-    path: online-shop-helm
+    path: online-e-commerce-helm
     helm:
       valueFiles:
         - values.yaml
@@ -706,7 +706,7 @@ spec:
           value: "3"
   destination:
     server: https://kubernetes.default.svc
-    namespace: online-shop
+    namespace: online-e-commerce
   syncPolicy:
     automated:
       prune: true
@@ -721,17 +721,17 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: online-shop-kustomize
+  name: online-e-commerce-kustomize
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/<your-username>/argocd-demos.git
+    repoURL: https://github.com/techmahato/argocd-demos.git
     targetRevision: main
-    path: online-shop/overlays/production    # Kustomize overlay path
+    path: online-e-commerce/overlays/production    # Kustomize overlay path
   destination:
     server: https://kubernetes.default.svc
-    namespace: online-shop-prod
+    namespace: online-e-commerce-prod
   syncPolicy:
     automated:
       prune: true
@@ -747,13 +747,13 @@ gitops-config-repo/
 ├── argocd-apps/
 │   ├── nginx-app.yaml
 │   ├── apache-app.yaml
-│   └── online-shop-app.yaml      ← Application definitions in Git!
+│   └── online-e-commerce-app.yaml      ← Application definitions in Git!
 ├── apps/
 │   ├── nginx/
 │   │   ├── deployment.yaml
 │   │   └── service.yaml
 │   ├── apache/
-│   └── online-shop/
+│   └── online-e-commerce/
 └── README.md
 ```
 
@@ -1076,6 +1076,221 @@ The declarative approach is the only method that satisfies all GitOps principles
 | Delete (keep resources) | `argocd app delete <name> --cascade=false` |
 | Enable auto-sync | `argocd app set <name> --sync-policy automated` |
 | List all apps | `argocd app list` |
+
+---
+
+## 14. ArgoCD Commands — Complete Reference (Basic to Advanced)
+
+### 🟢 Application Management
+
+```bash
+# ─── CREATE ───
+argocd app create <name> --repo <url> --path <path> --dest-server <server> --dest-namespace <ns>
+argocd app create <name> -f application.yaml         # Create from file
+
+# ─── LIST & GET ───
+argocd app list                                       # List all apps
+argocd app list -o wide                               # Wide output with more details
+argocd app list -p <project-name>                     # Filter by project
+argocd app list --selector team=backend               # Filter by label
+argocd app get <name>                                 # Detailed app info
+argocd app get <name> -o json                         # JSON output
+argocd app get <name> -o yaml                         # YAML output
+argocd app resources <name>                           # List all managed resources
+
+# ─── SYNC ───
+argocd app sync <name>                                # Sync (apply changes)
+argocd app sync <name> --prune                        # Sync + delete resources not in Git
+argocd app sync <name> --force                        # Force recreate resources
+argocd app sync <name> --dry-run                      # Preview without applying
+argocd app sync <name> --replace                      # Use kubectl replace instead of apply
+argocd app sync <name> --retry-limit 5                # Retry on failure
+argocd app sync <name> --resource apps:Deployment:nginx   # Sync specific resource only
+argocd app sync <name> --async                        # Don't wait for completion
+argocd app sync -l team=backend                       # Sync all apps with label
+
+# ─── REFRESH ───
+argocd app get <name> --refresh                       # Force refresh from Git
+argocd app get <name> --hard-refresh                  # Hard refresh (clear cache)
+
+# ─── DIFF ───
+argocd app diff <name>                                # Show diff between Git and live
+argocd app diff <name> --local /path/to/manifests     # Diff with local files
+
+# ─── MODIFY ───
+argocd app set <name> --sync-policy automated         # Enable auto-sync
+argocd app set <name> --sync-policy none              # Disable auto-sync
+argocd app set <name> --auto-prune                    # Enable auto-prune
+argocd app set <name> --self-heal                     # Enable self-heal
+argocd app set <name> --dest-namespace new-ns         # Change target namespace
+argocd app set <name> --revision develop              # Change target branch
+argocd app set <name> --path new/path                 # Change source path
+argocd app set <name> --values values-prod.yaml       # Change Helm values file
+argocd app set <name> -p image.tag=v2.0.1             # Set Helm parameter
+argocd app unset <name> -p image.tag                  # Remove Helm parameter override
+
+# ─── ROLLBACK ───
+argocd app history <name>                             # View sync history
+argocd app rollback <name> <revision>                 # Rollback to specific revision
+
+# ─── DELETE ───
+argocd app delete <name>                              # Delete app + all resources (cascade)
+argocd app delete <name> --cascade=false              # Delete app but KEEP resources
+argocd app delete <name> -y                           # Delete without confirmation
+
+# ─── LOGS ───
+argocd app logs <name>                                # Stream app logs
+argocd app logs <name> --follow                       # Follow logs in real-time
+argocd app logs <name> --container main               # Specific container
+argocd app logs <name> --since 10m                    # Logs from last 10 minutes
+
+# ─── ACTIONS ───
+argocd app actions list <name>                        # List available actions
+argocd app actions run <name> restart --resource-name <pod>   # Restart a resource
+argocd app terminate-op <name>                        # Terminate running sync operation
+argocd app wait <name> --sync                         # Wait until app is synced
+argocd app wait <name> --health                       # Wait until app is healthy
+```
+
+### 🟡 Project Management
+
+```bash
+# ─── CRUD ───
+argocd proj create <name> --description "<desc>"
+argocd proj list
+argocd proj get <name>
+argocd proj delete <name>
+argocd proj edit <name>                               # Open in editor
+
+# ─── SOURCE/DESTINATION ───
+argocd proj add-source <name> <repo-url>              # Allow a repo
+argocd proj remove-source <name> <repo-url>           # Remove allowed repo
+argocd proj add-destination <name> <server> <ns>      # Allow a destination
+argocd proj remove-destination <name> <server> <ns>   # Remove destination
+
+# ─── RESOURCE CONTROLS ───
+argocd proj allow-cluster-resource <name> <group> <kind>   # Allow cluster resource
+argocd proj deny-cluster-resource <name> <group> <kind>    # Deny cluster resource
+argocd proj allow-namespace-resource <name> <group> <kind> # Allow namespaced resource
+
+# ─── RBAC ───
+argocd proj role list <name>                          # List project roles
+argocd proj role create <name> <role>                 # Create role
+argocd proj role add-policy <name> <role> -a get -p "*//*"   # Add policy
+
+# ─── SYNC WINDOWS ───
+argocd proj windows list <name>                       # List sync windows
+argocd proj windows add <name> --kind allow --schedule "0 9 * * 1-5" --duration 8h
+argocd proj windows delete <name> <window-id>
+```
+
+### 🟠 Cluster & Repository Management
+
+```bash
+# ─── CLUSTERS ───
+argocd cluster list                                   # List registered clusters
+argocd cluster add <context-name> --name <friendly-name>  # Add cluster
+argocd cluster rm <server-url>                        # Remove cluster
+argocd cluster get <server-url>                       # Cluster details
+argocd cluster rotate-auth <server-url>               # Rotate cluster credentials
+
+# ─── REPOSITORIES ───
+argocd repo list                                      # List repos
+argocd repo add <url> --username <user> --password <pass>  # Add HTTPS repo
+argocd repo add <url> --ssh-private-key-path <key>    # Add SSH repo
+argocd repo rm <url>                                  # Remove repo
+argocd repo get <url>                                 # Repo details
+
+# ─── REPO CREDENTIALS (Templates) ───
+argocd repocreds list                                 # List credential templates
+argocd repocreds add <url-pattern> --username <user> --password <pass>
+argocd repocreds rm <url-pattern>
+```
+
+### 🔴 Account & Auth Management
+
+```bash
+# ─── ACCOUNTS ───
+argocd account list                                   # List all accounts
+argocd account get-user-info                          # Current user info
+argocd account update-password                        # Change own password
+argocd account update-password --account <name> --new-password <pass>  # Change other's password
+argocd account generate-token --account <name>        # Generate API token
+argocd account generate-token --account <name> --expires-in 24h  # Token with expiry
+
+# ─── LOGIN/LOGOUT ───
+argocd login <server> --username admin --password <pass> --insecure
+argocd login <server> --sso                           # SSO login
+argocd logout <server>                                # Logout
+
+# ─── CERTIFICATES ───
+argocd cert list                                      # List all certificates
+argocd cert add-tls <hostname> --from <file>          # Add TLS cert
+argocd cert add-ssh --batch < known_hosts             # Add SSH known hosts
+argocd cert rm --cert-type https <hostname>           # Remove TLS cert
+
+# ─── GPG KEYS ───
+argocd gpg list                                       # List GPG keys
+argocd gpg add --from <key-file>                      # Add GPG key
+argocd gpg rm <key-id>                                # Remove GPG key
+```
+
+### 🟣 Advanced Operations & Debugging
+
+```bash
+# ─── ADMIN OPERATIONS ───
+argocd admin settings validate --argocd-cm-path ./argocd-cm.yaml   # Validate settings
+argocd admin proj generate-allow-list                  # Generate resource allow list
+argocd admin cluster generate-spec <context>           # Generate cluster secret spec
+argocd admin app generate-spec <name>                  # Generate app spec from live app
+argocd admin export > argocd-backup.yaml               # Export all ArgoCD data
+argocd admin import < argocd-backup.yaml               # Import ArgoCD backup
+
+# ─── NOTIFICATIONS ───
+argocd admin notifications template list               # List notification templates
+argocd admin notifications trigger list                # List notification triggers
+
+# ─── DEBUGGING ───
+argocd app manifests <name> --source live              # Show live manifests
+argocd app manifests <name> --source git               # Show desired manifests (from Git)
+argocd app patch <name> --patch '{"spec":{"syncPolicy":null}}'  # Patch app spec
+argocd app patch-resource <name> --resource-name <r> --patch '{"spec":{"replicas":5}}'
+
+# ─── VERSION & HEALTH ───
+argocd version                                        # Client + server version
+argocd version --client                               # Client version only
+```
+
+### 🏁 Common One-Liners for Production
+
+```bash
+# Sync ALL apps in a project
+argocd app list -p my-project -o name | xargs -I{} argocd app sync {}
+
+# Find all unhealthy apps
+argocd app list -o json | jq '.[] | select(.status.health.status != "Healthy") | .metadata.name'
+
+# Find all out-of-sync apps
+argocd app list -o json | jq '.[] | select(.status.sync.status != "Synced") | .metadata.name'
+
+# Force refresh all apps
+argocd app list -o name | xargs -I{} argocd app get {} --refresh
+
+# Disable auto-sync on ALL apps (emergency)
+argocd app list -o name | xargs -I{} argocd app set {} --sync-policy none
+
+# Re-enable auto-sync on all apps
+argocd app list -o name | xargs -I{} argocd app set {} --sync-policy automated
+
+# Delete all apps in a project (DANGEROUS!)
+argocd app list -p <project> -o name | xargs -I{} argocd app delete {} -y
+
+# Export all app definitions to YAML
+argocd app list -o name | xargs -I{} sh -c 'argocd app get {} -o yaml > {}.yaml'
+
+# Check which apps are using a specific image
+argocd app list -o json | jq -r '.[] | select(.status.summary.images[]? | contains("nginx")) | .metadata.name'
+```
 
 ---
 
