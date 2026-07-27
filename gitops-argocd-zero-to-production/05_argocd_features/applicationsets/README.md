@@ -83,7 +83,7 @@ This will deploy **chai-app** into **all clusters** registered in ArgoCD.
 
     ```bash
     NAME              PROJECT  SYNCPOLICY  CONDITIONS                                                                                                                                                                                                                                     REPO                                                PATH      TARGET
-    argocd/demo-list  default  nil         [{ParametersGenerated Successfully generated parameters for all Applications 2025-09-08 09:33:30 +0000 UTC True ParametersGenerated} {ResourcesUpToDate ApplicationSet up to date 2025-09-08 09:33:30 +0000 UTC True ApplicationSetUpToDate}]  https://github.com/Amitabh-DevOps/argocd-demos.git  {{path}}  main
+    argocd/demo-list  default  nil         [{ParametersGenerated Successfully generated parameters for all Applications 2025-09-08 09:33:30 +0000 UTC True ParametersGenerated} {ResourcesUpToDate ApplicationSet up to date 2025-09-08 09:33:30 +0000 UTC True ApplicationSetUpToDate}]  https://github.com/Amitabh-DevOps/argocd-lab-code.git  {{path}}  main
     ```
 
 2. Verify in ArgoCD UI:
@@ -114,9 +114,9 @@ This will deploy **chai-app** into **all clusters** registered in ArgoCD.
 
     ```bash
     NAME                     CLUSTER                         NAMESPACE  PROJECT  STATUS  HEALTH   SYNCPOLICY  CONDITIONS  REPO                                                PATH                      TARGET
-    argocd/chaiapp-list      https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-demos.git  applicationsets/chai-app  main
-    argocd/nginx-list        https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-demos.git  ui_approach/nginx         main
-    argocd/online-shop-list  https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-demos.git  multicluster/online-shop  main
+    argocd/chaiapp-list      https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-lab-code.git  applicationsets/chai-app  main
+    argocd/nginx-list        https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-lab-code.git  ui_approach/nginx         main
+    argocd/online-shop-list  https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-lab-code.git  multicluster/online-shop  main
     ```
 
 4. Access the application
@@ -209,7 +209,7 @@ For now, we will use `in-cluster` and `argocd-cluster`(Where ArgoCD is deployed)
     ```bash
     NAME                 PROJECT  SYNCPOLICY  CONDITIONS                                                                                                                                 
                                                                                                         REPO                                                PATH                      TARGET
-    argocd/demo-cluster  default  nil         [{ParametersGenerated Successfully generated parameters for all Applications 2025-09-08 10:26:24 +0000 UTC True ParametersGenerated} {ResourcesUpToDate ApplicationSet up to date 2025-09-08 10:26:24 +0000 UTC True ApplicationSetUpToDate}]  https://github.com/Amitabh-DevOps/argocd-demos.git  applicationsets/chai-app  main
+    argocd/demo-cluster  default  nil         [{ParametersGenerated Successfully generated parameters for all Applications 2025-09-08 10:26:24 +0000 UTC True ParametersGenerated} {ResourcesUpToDate ApplicationSet up to date 2025-09-08 10:26:24 +0000 UTC True ApplicationSetUpToDate}]  https://github.com/Amitabh-DevOps/argocd-lab-code.git  applicationsets/chai-app  main
     ```
 
 2. Verify in ArgoCD UI:
@@ -228,8 +228,8 @@ For now, we will use `in-cluster` and `argocd-cluster`(Where ArgoCD is deployed)
 
     ```bash
     NAME                                 CLUSTER                         NAMESPACE  PROJECT  STATUS     HEALTH   SYNCPOLICY  CONDITIONS                REPO                                                PATH                      TARGET
-    argocd/in-cluster-chai-app           https://kubernetes.default.svc  default    default  OutOfSync  Healthy  Auto-Prune  SharedResourceWarning(3)  https://github.com/Amitabh-DevOps/argocd-demos.git  applicationsets/chai-app  main
-    argocd/kind-argocd-cluster-chai-app  https://172.31.19.178:33893     default    default  Synced     Healthy  Auto-Prune  <none>                    https://github.com/Amitabh-DevOps/argocd-demos.git  applicationsets/chai-app  main
+    argocd/in-cluster-chai-app           https://kubernetes.default.svc  default    default  OutOfSync  Healthy  Auto-Prune  SharedResourceWarning(3)  https://github.com/Amitabh-DevOps/argocd-lab-code.git  applicationsets/chai-app  main
+    argocd/kind-argocd-cluster-chai-app  https://172.31.19.178:33893     default    default  Synced     Healthy  Auto-Prune  <none>                    https://github.com/Amitabh-DevOps/argocd-lab-code.git  applicationsets/chai-app  main
     ```
 
 > [!NOTE]
@@ -284,7 +284,7 @@ For now, we will use `in-cluster` and `argocd-cluster`(Where ArgoCD is deployed)
     ```bash
     NAME             PROJECT  SYNCPOLICY  CONDITIONS                                                                                                                                     
                                                                                                     REPO                                                PATH      TARGET
-    argocd/demo-git  default  nil         [{ParametersGenerated Successfully generated parameters for all Applications 2025-09-08 11:04:06 +0000 UTC True ParametersGenerated} {ResourcesUpToDate ApplicationSet up to date 2025-09-08 11:04:06 +0000 UTC True ApplicationSetUpToDate}]  https://github.com/Amitabh-DevOps/argocd-demos.git  {{path}}  main
+    argocd/demo-git  default  nil         [{ParametersGenerated Successfully generated parameters for all Applications 2025-09-08 11:04:06 +0000 UTC True ParametersGenerated} {ResourcesUpToDate ApplicationSet up to date 2025-09-08 11:04:06 +0000 UTC True ApplicationSetUpToDate}]  https://github.com/Amitabh-DevOps/argocd-lab-code.git  {{path}}  main
     ```
 
 2. Verify in ArgoCD UI:
@@ -301,9 +301,9 @@ For now, we will use `in-cluster` and `argocd-cluster`(Where ArgoCD is deployed)
 
     ```bash
     NAME                    CLUSTER                         NAMESPACE  PROJECT  STATUS  HEALTH   SYNCPOLICY  CONDITIONS  REPO                                                PATH                       TARGET
-    argocd/apache-git       https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-demos.git  git_generator/apache       main
-    argocd/chai-app-git     https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-demos.git  git_generator/chai-app     main
-    argocd/online-shop-git  https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-demos.git  git_generator/online-shop  main
+    argocd/apache-git       https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-lab-code.git  git_generator/apache       main
+    argocd/chai-app-git     https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-lab-code.git  git_generator/chai-app     main
+    argocd/online-shop-git  https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-lab-code.git  git_generator/online-shop  main
     ```
 
 4. Access the application

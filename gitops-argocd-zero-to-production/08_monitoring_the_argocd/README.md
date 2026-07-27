@@ -145,7 +145,7 @@ kubectl apply -f online-shop-app.yaml
 
 > [!NOTE]
 >
-> Replace `<your-username>` with your GitHub username in both Application CRD, where you have forked & clonned the repo: `argocd-demos`.
+> Replace `<your-username>` with your GitHub username in both Application CRD, where you have forked & clonned the repo: `argocd-lab-code`.
 
 * ArgoCD Application Dashboard:
     

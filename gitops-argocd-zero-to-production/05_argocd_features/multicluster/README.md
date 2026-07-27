@@ -213,9 +213,9 @@ You will get:
 
 ```bash
 NAME                     CLUSTER                         NAMESPACE  PROJECT  STATUS  HEALTH   SYNCPOLICY  CONDITIONS  REPO                                                PATH                      TARGET
-argocd/apache-stg        https://172.31.19.178:33893     default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-demos.git  cli_approach/apache       main
-argocd/nginx-dev         https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-demos.git  ui_approach/nginx         main
-argocd/online-shop-prod  https://172.31.19.178:33894     default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-demos.git  multicluster/online-shop  main
+argocd/apache-stg        https://172.31.19.178:33893     default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-lab-code.git  cli_approach/apache       main
+argocd/nginx-dev         https://kubernetes.default.svc  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-lab-code.git  ui_approach/nginx         main
+argocd/online-shop-prod  https://172.31.19.178:33894     default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-lab-code.git  multicluster/online-shop  main
 ```
 
 Check resources in `in-cluster` (dev cluster):

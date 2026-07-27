@@ -30,14 +30,14 @@ Before you begin, ensure you have:
 
 ## Steps to Deploy Online Shop using Declarative Approach
 
-### 1. Open a new VSCode editor & Open that `argocd-demos` repo that you had clonned
+### 1. Open a new VSCode editor & Open that `argocd-lab-code` repo that you had clonned
 
 Just for manifest files, or making changes or pushing it to git - used while testing all approaches.
 
 In below directory you can see the related manifest files:
 
   ```bash
-  cd argocd-demos/declarative_approach/online_shop
+  cd argocd-lab-code/declarative_approach/online_shop
   ```
 
 ---
@@ -112,7 +112,7 @@ metadata:
 spec:
   project: default                 # ArgoCD Project (logical grouping of apps)
   source:
-    repoURL: https://github.com/<your-username>/argocd-demos.git   # Git repo containing manifests
+    repoURL: https://github.com/<your-username>/argocd-lab-code.git   # Git repo containing manifests
     targetRevision: main           # Git branch or tag (e.g., main, dev, release-1.0)
     path: declarative_approach/online_shop   # Path inside repo where manifests live
   destination:

@@ -43,7 +43,7 @@ Replace `<argocd_cluster_server_url>` with your ArgoCD added cluster server URL,
 
 > [!IMPORTANT]
 >
-> And also Replace `server: https://172.31.19.178:33893` in `argocd-demos` repos - `app_of_apps/apps` (apache_app.yml, nginx_app.yml, online_shop_app.yml) with your ArgoCD Cluster Url and Commit & Push it, You can get it by running `argocd cluster list`
+> And also Replace `server: https://172.31.19.178:33893` in `argocd-lab-code` repos - `app_of_apps/apps` (apache_app.yml, nginx_app.yml, online_shop_app.yml) with your ArgoCD Cluster Url and Commit & Push it, You can get it by running `argocd cluster list`
 
 ---
 
@@ -93,14 +93,14 @@ You should see all child apps managed under `root-app`.
 ```bash
 
 NAME                      CLUSTER                      NAMESPACE  PROJECT  STATUS     HEALTH   SYNCPOLICY  CONDITIONS                REPO                                                PATH                              TARGET
-argocd/apache-child       https://172.31.19.178:33893  default    default  Synced     Healthy  Auto-Prune  <none>                    https://github.com/Amitabh-DevOps/argocd-demos.git  cli_approach/apache               main
-argocd/nginx-child        https://172.31.19.178:33893  default    default  Synced     Healthy  Auto-Prune  <none>                    https://github.com/Amitabh-DevOps/argocd-demos.git  ui_approach/nginx                 main
-argocd/online-shop-app    https://172.31.19.178:33893  default    default  Synced     Healthy  Auto-Prune  <none>                    https://github.com/Amitabh-DevOps/argocd-demos.git  declarative_approach/online_shop  main
-argocd/online-shop-child  https://172.31.19.178:33893  default    default  OutOfSync  Healthy  Auto-Prune  SharedResourceWarning(3)  https://github.com/Amitabh-DevOps/argocd-demos.git  declarative_approach/online_shop  main
-argocd/root-app           https://172.31.19.178:33893  argocd     default  Synced     Healthy  Auto-Prune  <none>                    https://github.com/Amitabh-DevOps/argocd-demos.git  app_of_apps/apps
+argocd/apache-child       https://172.31.19.178:33893  default    default  Synced     Healthy  Auto-Prune  <none>                    https://github.com/Amitabh-DevOps/argocd-lab-code.git  cli_approach/apache               main
+argocd/nginx-child        https://172.31.19.178:33893  default    default  Synced     Healthy  Auto-Prune  <none>                    https://github.com/Amitabh-DevOps/argocd-lab-code.git  ui_approach/nginx                 main
+argocd/online-shop-app    https://172.31.19.178:33893  default    default  Synced     Healthy  Auto-Prune  <none>                    https://github.com/Amitabh-DevOps/argocd-lab-code.git  declarative_approach/online_shop  main
+argocd/online-shop-child  https://172.31.19.178:33893  default    default  OutOfSync  Healthy  Auto-Prune  SharedResourceWarning(3)  https://github.com/Amitabh-DevOps/argocd-lab-code.git  declarative_approach/online_shop  main
+argocd/root-app           https://172.31.19.178:33893  argocd     default  Synced     Healthy  Auto-Prune  <none>                    https://github.com/Amitabh-DevOps/argocd-lab-code.git  app_of_apps/apps
 ```
 
-> Note `online-shop-app` is created because in `argocd-demos` repo we already have Appliation CRD for online-shop in declarative approach, that's why with the help of true gitops it created that also.
+> Note `online-shop-app` is created because in `argocd-lab-code` repo we already have Appliation CRD for online-shop in declarative approach, that's why with the help of true gitops it created that also.
 
 ---
 

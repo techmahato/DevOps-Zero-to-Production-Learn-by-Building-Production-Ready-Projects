@@ -35,14 +35,14 @@ Before you begin, ensure you have:
 
 ## Steps to Deploy Apache using ArgoCD CLI
 
-### 1. Open a new VSCode editor & Open that `argocd-demos` repo that you had clonned
+### 1. Open a new VSCode editor & Open that `argocd-lab-code` repo that you had clonned
 
 Just for manifest files, or making changes or pushing it to git - used while testing all approaches.
 
 In below directory you can see the related manifest files:
 
   ```bash
-  cd argocd-demos/cli_approach/apache
+  cd argocd-lab-code/cli_approach/apache
   ````
 
 ---
@@ -117,7 +117,7 @@ Run this command to create an ArgoCD application:
 
 ```bash
 argocd app create apache-app \
-  --repo https://github.com/<your-username>/argocd-demos.git \
+  --repo https://github.com/<your-username>/argocd-lab-code.git \
   --path cli_approach/apache \
   --dest-server https://<your_added_cluster_url> \
   --dest-namespace default \
@@ -151,7 +151,7 @@ You should see `apache-app` in the list.
 
 ```
 NAME               CLUSTER                      NAMESPACE  PROJECT  STATUS  HEALTH   SYNCPOLICY  CONDITIONS  REPO                                                PATH                 TARGET
-argocd/apache-app  https://172.31.19.178:33893  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-demos.git  cli_approach/apache 
+argocd/apache-app  https://172.31.19.178:33893  default    default  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-lab-code.git  cli_approach/apache 
 ```
 
 and in UI, you can check it is creating:

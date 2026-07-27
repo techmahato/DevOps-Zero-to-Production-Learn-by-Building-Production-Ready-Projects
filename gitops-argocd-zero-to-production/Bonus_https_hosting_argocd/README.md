@@ -264,7 +264,7 @@ Open your browser in incognito mode (if you tried previously in normal mode or e
 
 ## Try creating applications in ArgoCD
 
-1. Deploy our online-shop (or any other app from `argocd-demos` repo) application that we used in previous examples (you can use path `multicluster/online-shop`).
+1. Deploy our online-shop (or any other app from `argocd-lab-code` repo) application that we used in previous examples (you can use path `multicluster/online-shop`).
 
     ![argocd-online-shop](output_images/image-1.png)
 

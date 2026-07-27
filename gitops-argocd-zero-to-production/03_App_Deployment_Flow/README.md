@@ -262,12 +262,12 @@ For this hands-on, we'll use these repos:
 
 ```bash
 # Fork this repo first, then clone:
-git clone https://github.com/techmahato/argocd-demos.git
+git clone https://github.com/techmahato/argocd-lab-code.git
 ```
 
 **Repository structure:**
 ```
-argocd-demos/
+argocd-lab-code/
 ├── nginx/                    # NGINX manifests (UI approach)
 │   ├── deployment.yaml
 │   ├── service.yaml
@@ -388,7 +388,7 @@ ArgoCD needs to know WHERE your Kubernetes manifests are stored. Without connect
 **For Public Repo (no auth needed):**
 ```
 Type:      git
-Repo URL:  https://github.com/techmahato/argocd-demos.git
+Repo URL:  https://github.com/techmahato/argocd-lab-code.git
 ```
 
 **For Private Repo (HTTPS + PAT):**
@@ -405,7 +405,7 @@ Password:  ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ```bash
 # Public repository (no authentication needed)
-argocd repo add https://github.com/techmahato/argocd-demos.git
+argocd repo add https://github.com/techmahato/argocd-lab-code.git
 
 # Private repository with HTTPS token
 argocd repo add https://github.com/techmahato/private-config.git \
@@ -433,7 +433,7 @@ metadata:
 type: Opaque
 stringData:
   type: git
-  url: https://github.com/techmahato/argocd-demos.git
+  url: https://github.com/techmahato/argocd-lab-code.git
   # For private repos, add:
   # username: git
   # password: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -465,7 +465,7 @@ Projects define the boundaries for your applications — which repos, clusters, 
 2. Fill in:
    - Name: `demo-project`
    - Description: "Demo project for first app deployments"
-   - Source Repos: `https://github.com/techmahato/argocd-demos.git`
+   - Source Repos: `https://github.com/techmahato/argocd-lab-code.git`
    - Destinations: Server `https://kubernetes.default.svc`, Namespace `*`
 3. Click **CREATE**
 
@@ -474,7 +474,7 @@ Projects define the boundaries for your applications — which repos, clusters, 
 ```bash
 argocd proj create demo-project \
   --description "Demo project for first app deployments" \
-  --src "https://github.com/techmahato/argocd-demos.git" \
+  --src "https://github.com/techmahato/argocd-lab-code.git" \
   --dest "https://kubernetes.default.svc,*"
 
 # Allow namespace creation
@@ -495,7 +495,7 @@ metadata:
 spec:
   description: "Demo project for first app deployments"
   sourceRepos:
-    - 'https://github.com/techmahato/argocd-demos.git'
+    - 'https://github.com/techmahato/argocd-lab-code.git'
   destinations:
     - server: https://kubernetes.default.svc
       namespace: '*'
@@ -568,7 +568,7 @@ Deploy an **NGINX** application using the ArgoCD Web Dashboard. This is the easi
 │  Sync Policy:       ○ Manual   ○ Automatic                   │
 │                                                                │
 │  ─── SOURCE ───                                               │
-│  Repository URL:    [https://github.com/<user>/argocd-demos] │
+│  Repository URL:    [https://github.com/<user>/argocd-lab-code] │
 │  Revision:          [main ▼]  (branch/tag/commit)            │
 │  Path:              [nginx                                ]   │
 │                                                                │
@@ -634,7 +634,7 @@ Deploy an **Apache** application using the `argocd` CLI. Better than UI because 
 
 ```bash
 argocd app create apache-app \
-  --repo https://github.com/techmahato/argocd-demos.git \
+  --repo https://github.com/techmahato/argocd-lab-code.git \
   --path apache \
   --dest-server https://kubernetes.default.svc \
   --dest-namespace apache-app \
@@ -654,7 +654,7 @@ argocd app get apache-app
 # Server:             https://kubernetes.default.svc
 # Namespace:          apache-app
 # URL:                https://<argocd-server>:8080/applications/apache-app
-# Repo:               https://github.com/<user>/argocd-demos.git
+# Repo:               https://github.com/<user>/argocd-lab-code.git
 # Path:               apache
 # Target:             main
 # Sync Status:        OutOfSync
@@ -786,7 +786,7 @@ spec:
 
   # SOURCE: Where the manifests live
   source:
-    repoURL: https://github.com/techmahato/argocd-demos.git
+    repoURL: https://github.com/techmahato/argocd-lab-code.git
     targetRevision: main
     path: online-e-commerce      # Folder in the repo containing manifests
 
@@ -852,7 +852,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/techmahato/argocd-demos.git
+    repoURL: https://github.com/techmahato/argocd-lab-code.git
     targetRevision: main
     path: online-e-commerce-helm
     helm:
@@ -886,7 +886,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/techmahato/argocd-demos.git
+    repoURL: https://github.com/techmahato/argocd-lab-code.git
     targetRevision: main
     path: online-e-commerce/overlays/production    # Kustomize overlay path
   destination:

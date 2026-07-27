@@ -157,7 +157,7 @@ Dex is a built-in OIDC identity service bundled with ArgoCD, used when you want 
 
 * Try to add repo and create application (online_shop), check whether you can do it or not:
   
-  * I have connected repo `argocd-demos` that we are using in this course.
+  * I have connected repo `argocd-lab-code` that we are using in this course.
 
     ![add-repo](output_images/image-21.png)
 

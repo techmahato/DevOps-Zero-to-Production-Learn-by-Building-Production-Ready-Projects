@@ -89,7 +89,7 @@ to see the list of projects.
 ```bash
 NAME           DESCRIPTION                     DESTINATIONS                          SOURCES                                             CLUSTER-RESOURCE-WHITELIST  NAMESPACE-RESOURCE-BLACKLIST  SIGNATURE-KEYS  ORPHANED-RESOURCES  DESTINATION-SERVICE-ACCOUNTS
 default                                        *,*                                   *                                                   */*                         <none>                        <none>          disabled            <none>
-frontend-team  Project for frontend team apps  https://172.31.19.178:33893,frontend  https://github.com/Amitabh-DevOps/argocd-demos.git  */*                         <none>                        <none>          disabled            <none>
+frontend-team  Project for frontend team apps  https://172.31.19.178:33893,frontend  https://github.com/Amitabh-DevOps/argocd-lab-code.git  */*                         <none>                        <none>          disabled            <none>
 ```
 
 ---
@@ -132,7 +132,7 @@ You should see the project column populated.
 
 ```bash
 NAME                   CLUSTER                      NAMESPACE  PROJECT        STATUS  HEALTH   SYNCPOLICY  CONDITIONS  REPO                                                PATH               TARGET
-argocd/nginx-frontend  https://172.31.19.178:33893  frontend   frontend-team  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-demos.git  ui_approach/nginx  main
+argocd/nginx-frontend  https://172.31.19.178:33893  frontend   frontend-team  Synced  Healthy  Auto-Prune  <none>      https://github.com/Amitabh-DevOps/argocd-lab-code.git  ui_approach/nginx  main
 ```
 
 

@@ -14,7 +14,7 @@ metadata:
 spec:
   project: default # ArgoCD project this app belongs to
   source:
-    repoURL: https://github.com/<your-username>/argocd-demos.git # Git repository containing the app manifests
+    repoURL: https://github.com/<your-username>/argocd-lab-code.git # Git repository containing the app manifests
     targetRevision: main # Git branch, tag, or commit to track
     path: applicationsets/chai-app # Path within the repo where manifests are located
   destination:

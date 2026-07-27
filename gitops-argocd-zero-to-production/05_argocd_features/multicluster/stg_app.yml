@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/<your-username>/argocd-demos.git
+    repoURL: https://github.com/<your-username>/argocd-lab-code.git
     targetRevision: main
     path: cli_approach/apache      # Path to apache manifests
   destination:

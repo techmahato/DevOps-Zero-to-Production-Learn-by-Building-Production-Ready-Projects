@@ -92,7 +92,7 @@ argocd-image-updater.argoproj.io/image-list: chai-app=<your-dockerhub-username>/
 * ArgoCD Server installed & running.
 * `kubectl` installed & configured.
 * ArgoCD CLI installed and logged In.
-* A GitHub repo with your manifests (example: `https://github.com/Amitabh-DevOps/argocd-demos.git`).
+* A GitHub repo with your manifests (example: `https://github.com/Amitabh-DevOps/argocd-lab-code.git`).
 * GitHub Personal Access Token (PAT) with `repo` permissions (for git write-back).
     
     ![github-pat](output_images/image-1.png)
@@ -155,7 +155,7 @@ Now you own a copy of the demo image and can push new versions under your accoun
 >
 > Update image in your `deployment` of chai-app:
 > 
-> 1. Open that forked & clonned repo of this repo `https://github.com/Amitabh-DevOps/argocd-demos.git`.
+> 1. Open that forked & clonned repo of this repo `https://github.com/Amitabh-DevOps/argocd-lab-code.git`.
 > 2. Navigate to `image_updater/chai-app/deployment.yml`.
 > 3. Update image from `amitabhdevops/chai-devops:v1.0.0` to `<your-dockerhub-username>/chai-devops:v1.0.0`. Here:
 >
@@ -198,7 +198,7 @@ Use: [chai-app.yaml](chai-app.yaml)
 
 > Replace `<your-dockerhub-username>` with your Docker Hub username.
 
-> Replace `<your-github-username>` with Your GitHub username, the repo which your forked and clonned - `argocd-demos`.
+> Replace `<your-github-username>` with Your GitHub username, the repo which your forked and clonned - `argocd-lab-code`.
 
 Apply it:
 

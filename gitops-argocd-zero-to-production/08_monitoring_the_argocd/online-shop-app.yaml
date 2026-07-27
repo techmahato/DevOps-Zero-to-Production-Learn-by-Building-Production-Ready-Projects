@@ -7,7 +7,7 @@ metadata:
 spec:
   project: default                        # ArgoCD project to associate with this app
   source:
-    repoURL: https://github.com/<your-username>/argocd-demos.git # Git repo containing app manifests (replace <your-username>)
+    repoURL: https://github.com/<your-username>/argocd-lab-code.git # Git repo containing app manifests (replace <your-username>)
     targetRevision: main                  # Git branch or tag to track
     path: monitoring/online_shop          # Path within the repo to the app manifests
   destination:

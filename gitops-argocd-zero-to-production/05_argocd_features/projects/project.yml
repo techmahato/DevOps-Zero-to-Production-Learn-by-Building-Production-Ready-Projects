@@ -6,7 +6,7 @@ metadata:
 spec:
   description: Project for frontend team apps   # Optional description
   sourceRepos:                 # Which Git repos are allowed for this Project
-    - https://github.com/<your-username>/argocd-demos.git
+    - https://github.com/<your-username>/argocd-lab-code.git
   destinations:                # Which clusters/namespaces apps in this Project can target
     - namespace: frontend
       server: <added_argocd_cluster_server_url>  # Target cluster server url
