@@ -174,6 +174,74 @@ argocd account get-user-info
 
 > 💡 The `--insecure` flag is needed because we're using self-signed TLS certificates with port-forwarding. In production with proper TLS certs, this flag is not required.
 
+### ⚠️ Troubleshooting: CLI Login Issues
+
+#### ❌ Error: "Argo CD server address unspecified"
+
+```bash
+$ argocd account get-user-info
+{"level":"fatal","msg":"Argo CD server address unspecified","time":"2026-07-27T02:46:42Z"}
+```
+
+**Cause:** You ran a command BEFORE logging in. The CLI doesn't know which ArgoCD server to connect to.
+
+**Fix:** Login first, then run commands:
+```bash
+argocd login localhost:8080 --username admin --password <pass> --insecure
+argocd account get-user-info   # Now this works ✅
+```
+
+#### ❌ Login hangs or fails when using Public IP from inside EC2
+
+```bash
+# This may HANG or TIMEOUT:
+$ argocd login 3.234.182.253:8080 --username admin --password admin1234 --insecure
+```
+
+**Cause:** When you're **inside the EC2 instance** and try to connect via the **public IP**, the network traffic takes this path:
+
+```
+EC2 → exits to internet → comes back via public IP → Security Group → EC2
+      (NAT hairpin / loopback issue)
+```
+
+This round-trip often fails due to:
+- EC2 source/destination check blocking self-connections
+- Security Group not allowing traffic from its own IP
+- AWS NAT hairpin routing limitations
+
+**Fix:** Use `localhost` when connecting from **inside** the same EC2:
+
+```bash
+# ✅ FROM INSIDE EC2 — Always use localhost
+argocd login localhost:8080 --username admin --password admin1234 --insecure
+
+# ✅ Or use private IP
+argocd login 172.31.x.x:8080 --username admin --password admin1234 --insecure
+```
+
+#### 🔑 Rule of Thumb: When to Use Which Address
+
+| Where You Are | ArgoCD Address to Use | Why |
+|---------------|----------------------|-----|
+| **Inside EC2** (SSH session) | `localhost:8080` or `<private-IP>:8080` | Traffic stays local, no routing issues |
+| **Your Laptop** (browser) | `https://<PUBLIC-IP>:8080` | Traffic goes over internet to EC2 |
+| **Your Laptop** (CLI) | `<PUBLIC-IP>:8080` | Same as browser, goes over internet |
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  INSIDE EC2:                                                      │
+│  argocd login localhost:8080 ...        ← Traffic stays local ✅ │
+│                                                                   │
+│  FROM YOUR LAPTOP:                                               │
+│  argocd login 3.234.182.253:8080 ...    ← Goes via internet ✅  │
+│  Browser: https://3.234.182.253:8080    ← Goes via internet ✅  │
+│                                                                   │
+│  INSIDE EC2 using PUBLIC IP:                                     │
+│  argocd login 3.234.182.253:8080 ...    ← Hairpin NAT issue ❌  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ---
 
 ### Pre-requisite Checklist
