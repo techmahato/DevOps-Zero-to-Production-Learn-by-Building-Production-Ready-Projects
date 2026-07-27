@@ -268,18 +268,22 @@ git clone https://github.com/techmahato/argocd-lab-code.git
 **Repository structure:**
 ```
 argocd-lab-code/
-├── nginx/                    # NGINX manifests (UI approach)
+├── ui_approach/nginx/            # NGINX manifests (UI approach)
+│   ├── deployment.yaml
+│   └── service.yaml
+├── cli_approach/apache/          # Apache manifests (CLI approach)
+│   ├── deployment.yaml
+│   └── service.yaml
+├── declarative_approach/online_shop/  # Online Shop (Declarative approach)
 │   ├── deployment.yaml
 │   ├── service.yaml
-│   └── namespace.yaml
-├── apache/                   # Apache manifests (CLI approach)
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   └── namespace.yaml
-└── online-e-commerce/              # Microservices app (Declarative approach)
-    ├── deployment.yaml
-    ├── service.yaml
-    └── namespace.yaml
+│   └── online_shop_app.yml
+├── app_of_apps/apps/             # App of Apps pattern
+├── applicationsets/chai-app/     # ApplicationSets demo
+├── git_generator/                # Git generator example
+├── image_updater/chai-app/       # Image updater demo
+├── monitoring/                   # Monitoring manifests
+└── multicluster/online-shop/     # Multi-cluster setup
 ```
 
 ---
@@ -570,7 +574,7 @@ Deploy an **NGINX** application using the ArgoCD Web Dashboard. This is the easi
 │  ─── SOURCE ───                                               │
 │  Repository URL:    [https://github.com/<user>/argocd-lab-code] │
 │  Revision:          [main ▼]  (branch/tag/commit)            │
-│  Path:              [nginx                                ]   │
+│  Path:              [ui_approach/nginx                     ]   │
 │                                                                │
 │  ─── DESTINATION ───                                          │
 │  Cluster URL:       [https://kubernetes.default.svc ▼]       │
@@ -635,7 +639,7 @@ Deploy an **Apache** application using the `argocd` CLI. Better than UI because 
 ```bash
 argocd app create apache-app \
   --repo https://github.com/techmahato/argocd-lab-code.git \
-  --path apache \
+  --path cli_approach/apache \
   --dest-server https://kubernetes.default.svc \
   --dest-namespace apache-app \
   --project default \
@@ -788,7 +792,7 @@ spec:
   source:
     repoURL: https://github.com/techmahato/argocd-lab-code.git
     targetRevision: main
-    path: online-e-commerce      # Folder in the repo containing manifests
+    path: declarative_approach/online_shop      # Folder in the repo containing manifests
 
   # DESTINATION: Where to deploy
   destination:
@@ -888,7 +892,7 @@ spec:
   source:
     repoURL: https://github.com/techmahato/argocd-lab-code.git
     targetRevision: main
-    path: online-e-commerce/overlays/production    # Kustomize overlay path
+    path: declarative_approach/online_shop/overlays/production    # Kustomize overlay path
   destination:
     server: https://kubernetes.default.svc
     namespace: online-e-commerce-prod
