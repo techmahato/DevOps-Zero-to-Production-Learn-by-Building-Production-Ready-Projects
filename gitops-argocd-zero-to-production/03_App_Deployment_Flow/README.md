@@ -86,6 +86,98 @@ Before deploying any application with ArgoCD, you must follow a specific **end-t
 
 ## 2. Pre-requisites — Before Deploying Any App
 
+### Install ArgoCD CLI
+
+The ArgoCD CLI (`argocd`) is required for Method 2 (CLI approach) and for managing applications from the terminal.
+
+#### Linux (amd64)
+
+```bash
+# Download latest ArgoCD CLI
+curl -sSL -o /tmp/argocd \
+  https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+
+# Install
+sudo install -m 555 /tmp/argocd /usr/local/bin/argocd
+rm -f /tmp/argocd
+
+# Verify
+argocd version --client
+```
+
+#### Linux (arm64 / Graviton)
+
+```bash
+curl -sSL -o /tmp/argocd \
+  https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-arm64
+sudo install -m 555 /tmp/argocd /usr/local/bin/argocd
+rm -f /tmp/argocd
+argocd version --client
+```
+
+#### macOS (Intel)
+
+```bash
+curl -sSL -o /tmp/argocd \
+  https://github.com/argoproj/argo-cd/releases/latest/download/argocd-darwin-amd64
+sudo install -m 555 /tmp/argocd /usr/local/bin/argocd
+rm -f /tmp/argocd
+argocd version --client
+```
+
+#### macOS (Apple Silicon M1/M2/M3)
+
+```bash
+curl -sSL -o /tmp/argocd \
+  https://github.com/argoproj/argo-cd/releases/latest/download/argocd-darwin-arm64
+sudo install -m 555 /tmp/argocd /usr/local/bin/argocd
+rm -f /tmp/argocd
+argocd version --client
+```
+
+#### Windows (PowerShell)
+
+```powershell
+# Download
+Invoke-WebRequest -Uri https://github.com/argoproj/argo-cd/releases/latest/download/argocd-windows-amd64.exe -OutFile argocd.exe
+
+# Move to a directory in your PATH
+Move-Item argocd.exe C:\Windows\System32\argocd.exe
+
+# Verify
+argocd version --client
+```
+
+#### Using Homebrew (macOS/Linux)
+
+```bash
+brew install argocd
+argocd version --client
+```
+
+### Login to ArgoCD via CLI
+
+```bash
+# Get the admin password
+ARGOCD_PASSWORD=$(kubectl get secret argocd-initial-admin-secret -n argocd \
+  -o jsonpath="{.data.password}" | base64 -d)
+
+# Login
+argocd login <EC2_PUBLIC_IP>:8080 \
+  --username admin \
+  --password $ARGOCD_PASSWORD \
+  --insecure
+
+# Verify login
+argocd account get-user-info
+```
+
+> 💡 The `--insecure` flag is needed because we're using self-signed TLS certificates with port-forwarding. In production with proper TLS certs, this flag is not required.
+
+---
+
+### Pre-requisite Checklist
+
 Ensure you have:
 
 | Requirement | Check Command | Expected Output |
