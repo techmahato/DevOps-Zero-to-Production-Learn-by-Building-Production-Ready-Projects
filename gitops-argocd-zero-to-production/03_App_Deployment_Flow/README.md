@@ -1049,7 +1049,57 @@ git push    # ArgoCD auto-syncs to previous state
 | **Pods not starting** | `kubectl describe pod <pod> -n <ns>` | Check image, resources, secrets |
 | **Health Degraded** | Check pod logs | `kubectl logs <pod> -n <ns>` |
 | **Namespace not created** | Missing sync option | Add `CreateNamespace=true` |
-| **Permission denied** | Project restrictions | Check project sourceRepos and destinations |
+| **Permission denied on sync** | App in wrong project | Check project or recreate app under `default` project |
+| **"app path does not exist"** | Wrong `--path` value | Verify folder exists in Git repo (check exact path: `ui_approach/nginx`, not `nginx`) |
+| **Default page instead of custom page** | ConfigMap not applied or missing | Ensure ConfigMap YAML is in the repo folder, then `argocd app sync <app> --force` |
+
+#### ❌ Error: "permission denied" When Syncing
+
+```bash
+$ argocd app sync nginx-app --force --prune
+{"level":"fatal","msg":"rpc error: code = PermissionDenied desc = permission denied"}
+```
+
+**Cause:** The application was created under a Project that doesn't allow the repo or namespace you're using. OR you logged into ArgoCD with a different context.
+
+**Fix:**
+```bash
+# Check which project the app belongs to
+argocd app get nginx-app | grep Project
+
+# Option 1: Delete and recreate under 'default' project
+argocd app delete nginx-app -y
+argocd app create nginx-app \
+  --repo https://github.com/techmahato/argocd-lab-code.git \
+  --path ui_approach/nginx \
+  --dest-server https://kubernetes.default.svc \
+  --dest-namespace nginx-app \
+  --project default \
+  --sync-option CreateNamespace=true \
+  --revision main
+argocd app sync nginx-app
+
+# Option 2: Update the project to allow the repo/namespace
+argocd proj add-source <project-name> https://github.com/techmahato/argocd-lab-code.git
+argocd proj add-destination <project-name> https://kubernetes.default.svc nginx-app
+```
+
+#### ❌ Error: "app path does not exist"
+
+```bash
+{"level":"fatal","msg":"Unable to generate manifests in apache: app path does not exist"}
+```
+
+**Cause:** The `--path` you specified doesn't exist in the Git repo.
+
+**Fix:** Check the actual folder structure in your repo and use the correct path:
+```bash
+# Wrong:  --path apache
+# Right:  --path cli_approach/apache
+
+# Wrong:  --path nginx
+# Right:  --path ui_approach/nginx
+```
 
 ---
 
